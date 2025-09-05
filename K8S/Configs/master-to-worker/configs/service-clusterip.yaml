@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: bodevops-deployment
+  name: bodevops-service-clusterip
+  namespace: bodevops
+spec:
+  type: ClusterIP
+  selector:
+    app: bodevops-deployment
+  ports:
+    - port: 80
+      targetPort: 80

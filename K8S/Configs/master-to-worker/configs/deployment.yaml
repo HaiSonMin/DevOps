@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bodevops-deployment
+  name: bodevops-deployment
+  namespace: bodevops
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bodevops-deployment
+  strategy:
+    rollingUpdate:
+      maxSurge: 1 # More conservative surge
+      maxUnavailable: 0 # Keep zero downtime
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: bodevops-deployment
+    spec:
+      containers:
+        - image: nginx:latest
+          name: bodevops
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          # Improved health checks
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 10 # Reduced from 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 2 # Much faster startup
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          # Startup probe to handle initial startup time
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 10 # Allow up to 50 seconds for startup
+          # Increased resource limits
+          resources:
+            requests:
+              cpu: 50m # Lower request for better scheduling
+              memory: 64Mi
+            limits:
+              cpu: 200m # Reduced but adequate limit
+              memory: 256Mi

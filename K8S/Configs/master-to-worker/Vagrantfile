@@ -1,0 +1,206 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# C:\Users\XYLITOL\VirtualBox VMs => Các cấu hình được lưu trữ tại đây
+
+Vagrant.configure("2") do |config|
+  # Base box Ubuntu 22.04 LTS
+  config.vm.box = "ubuntu/jammy64"
+  
+  # Increase boot timeout for heavy provisioning
+  config.vm.boot_timeout = 600
+  
+  # Cấu hình chung cho tất cả máy ảo
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "4096"
+    vb.cpus = 2
+    vb.gui = false
+  end
+
+  # Định nghĩa 3 máy ảo K8s
+  machines = [
+    { name: "k8s-master-1", ip: "192.168.1.101", memory: 4096, cpus: 2, disk: 20 },
+    { name: "k8s-worker-2", ip: "192.168.1.102", memory: 4096, cpus: 2, disk: 20 },
+    { name: "k8s-worker-3", ip: "192.168.1.103", memory: 4096, cpus: 2, disk: 20 }
+  ]
+
+  machines.each do |machine|
+    config.vm.define machine[:name] do |node|
+      # Hostname
+      node.vm.hostname = machine[:name]
+      
+      # Network - Bridge mode với IP tĩnh
+      node.vm.network "public_network", 
+        ip: machine[:ip],
+        netmask: "255.255.255.0",
+        bridge: "Realtek 8852CE WiFi 6E PCI-E NIC"
+      
+      # Provider-specific settings
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = machine[:name]
+        vb.memory = machine[:memory]
+        vb.cpus = machine[:cpus]
+        
+        # Tối ưu cho K8s
+        vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+      end
+
+      # Provisioning script chung
+      node.vm.provision "shell", inline: <<-SHELL
+        # Update system
+        apt-get update
+        apt-get upgrade -y
+        
+        # Cấu hình hosts file
+        cat >> /etc/hosts << 'EOF'
+127.0.0.1 localhost
+192.168.1.101 k8s-master-1
+192.168.1.102 k8s-worker-2  
+192.168.1.103 k8s-worker-3
+EOF
+
+        # Cấu hình netplan cho IP tĩnh
+        cat > /etc/netplan/50-vagrant.yaml << 'EOF'
+network:
+  version: 2
+  ethernets:
+    enp0s8:
+      dhcp4: false
+      addresses:
+        - #{machine[:ip]}/24
+      gateway4: 192.168.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+EOF
+
+        alias ku=kubectl
+        alias dk=docker
+        alias mi=minikube
+        alias vi=vim
+        alias ll='ls -alF'
+
+        # Áp dụng netplan
+        netplan apply
+        
+        # Tắt swap (yêu cầu cho K8s)
+        swapoff -a
+        sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+        
+        # Tạo user bodevops
+        useradd -m -s /bin/bash bodevops
+        echo 'bodevops:bodevops' | chpasswd
+        
+        # Thêm bodevops vào sudo group
+        usermod -aG sudo bodevops
+        
+        # Cho phép bodevops sudo không cần password
+        echo 'bodevops ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+        
+        # Tạo SSH key cho user bodevops
+        sudo -u bodevops ssh-keygen -t rsa -b 4096 -f /home/bodevops/.ssh/id_rsa -N ""
+
+        # Cập nhật và nâng cấp hệ thống
+        sudo apt update -y && sudo apt upgrade -y
+
+                # Cấu hình module kernel
+        cat > /etc/modules-load.d/containerd.conf << 'EOF'
+overlay
+br_netfilter
+EOF
+
+        # Tải module kernel
+        modprobe overlay
+        modprobe br_netfilter
+        
+        # Cấu hình hệ thống mạng
+        cat > /etc/sysctl.d/kubernetes.conf << 'EOF'
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+
+        # Áp dụng cấu hình sysctl
+        sysctl --system
+        
+        # Cài đặt các gói cần thiết và thêm kho Docker
+        apt install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/docker.gpg
+        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        
+        # Cài đặt containerd
+        apt update -y
+        apt install -y containerd.io
+        
+        # Cấu hình containerd
+        containerd config default | tee /etc/containerd/config.toml >/dev/null 2>&1
+        sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+        
+        # Khởi động containerd
+        systemctl restart containerd
+        systemctl enable containerd
+        
+        # Thêm kho lưu trữ Kubernetes
+        echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        
+        # Cài đặt các gói Kubernetes
+        apt update -y
+        apt install -y kubelet kubeadm kubectl
+        apt-mark hold kubelet kubeadm kubectl # Tránh tự động cập nhật các gói này -> Dễ gây ra lỗi cluster
+
+        # Cấu hình DNS servers
+        cat > /etc/systemd/resolved.conf << 'EOF'
+[Resolve]
+DNS=8.8.8.8 8.8.4.4 1.1.1.1 208.67.222.222
+FallbackDNS=1.1.1.1
+Domains=
+DNSSEC=no
+DNSOverTLS=no
+MulticastDNS=yes
+LLMNR=yes
+Cache=yes
+DNSStubListener=yes
+EOF
+
+        # Restart systemd-resolved
+        systemctl restart systemd-resolved
+        systemctl enable systemd-resolved
+        sudo kubeadm reset 
+        # ping 8.8.8.8
+        # ping registry.k8s.io
+
+
+        # ---------------- Thực hiện manual ----------------
+        # Thực hiện trên server k8s-master-1
+        sudo kubeadm init --v=5
+        mkdir -p $HOME/.kube
+        sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        sudo chown $(id -u):$(id -g) $HOME/.kube/config
+        # kubectl get nodes # Kiểm tra node đã join chưa
+
+        # Thực hiện trên server k8s-master-2 và k8s-master-3
+        # sudo kubeadm join 192.168.1.101:6443 --v=5 --token tvx8g1.y9u8chsqz3qk1q34  \
+        # --discovery-token-ca-cert-hash sha256:2e2c30a3d48968983bb1abf67d86cadbb09781a3820db990fba17006b7a40281
+
+        # Thực hiện trên server master(Master-1)
+        # kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/calico.yaml
+        # ---------------- Thực hiện manual ----------------
+
+        echo "Server #{machine[:name]} đã được cài đặt thành công!"
+        echo "User bodevops đã được tạo với password: bodevops"
+        echo "Kubernetes packages đã được cài đặt và sẵn sàng để khởi tạo cluster"
+        echo "Để reset cluster nếu cần: 
+          sudo kubeadm reset -f
+          sudo rm -rf /var/lib/etcd
+          sudo rm -rf /etc/kubernetes/manifests/*
+          sudo rm -rf /etc/kubernetes/admin.conf
+          sudo rm -rf /etc/kubernetes/kubelet.conf
+          sudo rm -rf /etc/kubernetes/pki/
+          rm -rf $HOME/.kube/
+        "
+      SHELL
+    end
+  end
+end

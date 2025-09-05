@@ -1,0 +1,361 @@
+# LPIC STORAGE & FILESYSTEM MANAGEMENT - COMPLETE GUIDE
+
+## 1. DISK & PARTITION INFORMATION
+lsblk                                   # List block devices in tree format
+lsblk -f                                # Show filesystem information
+blkid                                   # Show block device attributes
+sudo fdisk -l                          # List all disk partitions
+sudo fdisk -l /dev/sda                  # List specific disk partitions
+df -h                                   # Filesystem disk usage
+df -i                                   # Inode usage
+du -h /path                             # Directory size
+du -sh /path                            # Summary of directory size
+sudo parted -l                          # List partitions with parted
+
+# Disk information:
+sudo hdparm -I /dev/sda                 # Hard disk parameters
+sudo smartctl -a /dev/sda               # SMART disk information (install smartmontools)
+cat /proc/partitions                    # Kernel's partition table
+cat /proc/mounts                        # Currently mounted filesystems
+
+## 2. PARTITION MANAGEMENT (fdisk)
+sudo fdisk /dev/sdb                     # Interactive partition editor
+# fdisk commands inside fdisk:
+# p - print partition table
+# n - new partition
+# d - delete partition
+# t - change partition type
+# w - write changes and exit
+# q - quit without saving
+# l - list known partition types
+# m - help menu
+
+# Example fdisk session:
+# sudo fdisk /dev/sdb
+# n (new partition)
+# p (primary partition)
+# 1 (partition number)
+# [Enter] (first sector)
+# +10G (last sector - 10GB partition)
+# w (write changes)
+
+## 3. PARTITION MANAGEMENT (parted)
+sudo parted /dev/sdb                    # Interactive parted session
+sudo parted /dev/sdb print              # Print partition table
+sudo parted /dev/sdb mklabel gpt        # Create GPT partition table
+sudo parted /dev/sdb mklabel msdos      # Create MBR partition table
+sudo parted /dev/sdb mkpart primary ext4 0% 50%  # Create partition
+sudo parted /dev/sdb rm 1               # Remove partition 1
+sudo parted /dev/sdb resizepart 1 100%  # Resize partition to 100%
+
+# GPT partitioning with parted:
+sudo parted /dev/sdb mklabel gpt
+sudo parted /dev/sdb mkpart primary 0% 25%
+sudo parted /dev/sdb mkpart primary 25% 50%
+sudo parted /dev/sdb mkpart primary 50% 75%
+sudo parted /dev/sdb mkpart primary 75% 100%
+
+## 4. GDISK (GPT partitioning)
+sudo gdisk /dev/sdb                     # Interactive GPT partitioning
+# gdisk commands:
+# p - print partition table
+# n - new partition
+# d - delete partition
+# t - change partition type code
+# w - write changes and exit
+# q - quit without saving
+# ? - help
+
+# Common GPT partition type codes:
+# 8300 - Linux filesystem
+# 8200 - Linux swap
+# 8e00 - Linux LVM
+# ef00 - EFI System Partition
+
+## 5. FILESYSTEM CREATION
+sudo mkfs.ext4 /dev/sdb1                # Create ext4 filesystem
+sudo mkfs.ext3 /dev/sdb1                # Create ext3 filesystem
+sudo mkfs.ext2 /dev/sdb1                # Create ext2 filesystem
+sudo mkfs.xfs /dev/sdb1                 # Create XFS filesystem
+sudo mkfs.btrfs /dev/sdb1               # Create Btrfs filesystem
+sudo mkfs.vfat /dev/sdb1                # Create FAT32 filesystem
+sudo mkfs.ntfs /dev/sdb1                # Create NTFS filesystem
+
+# Filesystem creation with options:
+sudo mkfs.ext4 -L "MyLabel" /dev/sdb1   # Create with label
+sudo mkfs.ext4 -b 4096 /dev/sdb1        # Specify block size
+sudo mkfs.ext4 -m 1 /dev/sdb1           # Reserve 1% for root
+sudo mkfs.ext4 -j /dev/sdb1             # Force journaling
+
+## 6. FILESYSTEM MOUNTING
+sudo mkdir /mnt/mydisk                  # Create mount point
+sudo mount /dev/sdb1 /mnt/mydisk        # Mount filesystem
+sudo mount -t ext4 /dev/sdb1 /mnt/mydisk # Mount with specific type
+sudo mount -o ro /dev/sdb1 /mnt/mydisk  # Mount read-only
+sudo mount -o rw /dev/sdb1 /mnt/mydisk  # Mount read-write
+sudo umount /mnt/mydisk                 # Unmount filesystem
+sudo umount /dev/sdb1                   # Unmount by device
+
+# Mount with options:
+sudo mount -o noexec,nosuid /dev/sdb1 /mnt/mydisk  # Security options
+sudo mount -o uid=1000,gid=1000 /dev/sdb1 /mnt/mydisk  # Set ownership
+sudo mount -o remount,ro /mnt/mydisk    # Remount as read-only
+
+# Show mounted filesystems:
+mount                                   # Show all mounts
+mount | grep sdb1                       # Show specific mount
+findmnt                                 # Tree view of mounts
+findmnt /mnt/mydisk                     # Info about specific mount
+
+## 7. FSTAB CONFIGURATION
+cat /etc/fstab                          # View fstab file
+sudo cp /etc/fstab /etc/fstab.backup    # Backup fstab
+sudo nano /etc/fstab                    # Edit fstab
+
+# fstab format: device mountpoint fstype options dump pass
+# Examples:
+# /dev/sdb1 /mnt/data ext4 defaults 0 2
+# UUID=abc-def /home ext4 defaults,noatime 0 2
+# /dev/sdc1 /mnt/backup ext4 noauto,user 0 0
+# /swapfile none swap defaults 0 0
+
+# Test fstab:
+sudo mount -a                          # Mount all from fstab
+sudo umount -a                          # Unmount all (except root)
+mount -fav                              # Fake verbose mount (test only)
+
+# Get UUID for fstab:
+blkid /dev/sdb1                         # Get UUID of partition
+blkid | grep sdb1                       # Alternative method
+lsblk -f                                # Show all UUIDs
+
+## 8. LVM (Logical Volume Manager)
+# Install LVM:
+sudo apt install lvm2                   # Install LVM tools
+
+# Physical Volume (PV) management:
+sudo pvcreate /dev/sdb1 /dev/sdc1       # Create physical volumes
+sudo pvs                                # List physical volumes
+sudo pvdisplay                          # Detailed PV information
+sudo pvremove /dev/sdb1                 # Remove physical volume
+
+# Volume Group (VG) management:
+sudo vgcreate vg01 /dev/sdb1 /dev/sdc1  # Create volume group
+sudo vgs                                # List volume groups
+sudo vgdisplay                          # Detailed VG information
+sudo vgextend vg01 /dev/sdd1            # Add PV to VG
+sudo vgreduce vg01 /dev/sdc1            # Remove PV from VG
+sudo vgremove vg01                      # Remove volume group
+
+# Logical Volume (LV) management:
+sudo lvcreate -L 10G -n lv01 vg01       # Create 10GB logical volume
+sudo lvcreate -l 100%FREE -n lv02 vg01  # Use all remaining space
+sudo lvs                                # List logical volumes
+sudo lvdisplay                          # Detailed LV information
+sudo lvextend -L +5G /dev/vg01/lv01     # Extend LV by 5GB
+sudo lvextend -l +100%FREE /dev/vg01/lv01 # Use all free space
+sudo lvreduce -L -2G /dev/vg01/lv01     # Reduce LV by 2GB
+sudo lvremove /dev/vg01/lv01            # Remove logical volume
+
+# Resize filesystem after LV changes:
+sudo resize2fs /dev/vg01/lv01           # Resize ext4 filesystem
+sudo xfs_growfs /mnt/xfs                # Resize XFS filesystem
+
+## 9. RAID CONFIGURATION
+# Install mdadm:
+sudo apt install mdadm                  # Install RAID tools
+
+# Create RAID arrays:
+sudo mdadm --create --verbose /dev/md0 --level=1 --raid-devices=2 /dev/sdb1 /dev/sdc1  # RAID 1
+sudo mdadm --create --verbose /dev/md0 --level=0 --raid-devices=2 /dev/sdb1 /dev/sdc1  # RAID 0
+sudo mdadm --create --verbose /dev/md0 --level=5 --raid-devices=3 /dev/sdb1 /dev/sdc1 /dev/sdd1  # RAID 5
+
+# RAID management:
+cat /proc/mdstat                        # RAID status
+sudo mdadm --detail /dev/md0            # Detailed RAID information
+sudo mdadm --examine /dev/sdb1          # Examine RAID member
+sudo mdadm --add /dev/md0 /dev/sde1     # Add spare disk
+sudo mdadm --remove /dev/md0 /dev/sdc1  # Remove failed disk
+sudo mdadm --stop /dev/md0              # Stop RAID array
+sudo mdadm --assemble /dev/md0 /dev/sdb1 /dev/sdc1  # Assemble array
+
+# Save RAID configuration:
+sudo mdadm --detail --scan >> /etc/mdadm/mdadm.conf
+
+## 10. SWAP MANAGEMENT
+# Create swap file:
+sudo fallocate -l 2G /swapfile          # Create 2GB swap file
+sudo chmod 600 /swapfile                # Set secure permissions
+sudo mkswap /swapfile                   # Format as swap
+sudo swapon /swapfile                   # Enable swap file
+
+# Create swap partition:
+sudo mkswap /dev/sdb2                   # Format partition as swap
+sudo swapon /dev/sdb2                   # Enable swap partition
+
+# Swap management:
+swapon -s                               # Show swap usage
+cat /proc/swaps                         # Alternative swap info
+free -h                                 # Memory and swap usage
+sudo swapoff /swapfile                  # Disable swap file
+sudo swapoff -a                         # Disable all swap
+
+# Configure swap in fstab:
+# /swapfile none swap defaults 0 0
+# /dev/sdb2 none swap defaults 0 0
+
+# Swap tuning:
+cat /proc/sys/vm/swappiness              # Current swappiness value
+sudo sysctl vm.swappiness=10            # Set swappiness temporarily
+echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf  # Permanent setting
+
+## 11. FILESYSTEM MAINTENANCE
+# Check filesystem:
+sudo fsck /dev/sdb1                     # Check filesystem
+sudo fsck -y /dev/sdb1                  # Auto-fix errors
+sudo fsck.ext4 /dev/sdb1                # Check ext4 specifically
+sudo e2fsck /dev/sdb1                   # Extended check for ext2/3/4
+sudo xfs_check /dev/sdb1                # Check XFS filesystem
+
+# Force check on next boot:
+sudo touch /forcefsck                   # Force check on next boot
+sudo tune2fs -c 1 /dev/sdb1             # Force check after 1 mount
+
+# Filesystem information:
+sudo tune2fs -l /dev/sdb1               # Show ext4 filesystem info
+sudo dumpe2fs /dev/sdb1                 # Detailed ext4 information
+sudo xfs_info /dev/sdb1                 # XFS filesystem information
+
+# Tune filesystem:
+sudo tune2fs -L "NewLabel" /dev/sdb1    # Change filesystem label
+sudo tune2fs -m 1 /dev/sdb1             # Set reserved space to 1%
+sudo tune2fs -j /dev/sdb1               # Add journal to ext2
+
+## 12. DISK QUOTAS
+# Install quota tools:
+sudo apt install quota                  # Install quota tools
+
+# Enable quotas in fstab:
+# /dev/sdb1 /home ext4 defaults,usrquota,grpquota 0 2
+
+# Quota setup:
+sudo quotacheck -cug /home              # Create quota files
+sudo quotaon /home                      # Enable quotas
+sudo quotaoff /home                     # Disable quotas
+
+# Set quotas:
+sudo edquota -u username                # Edit user quotas
+sudo edquota -g groupname               # Edit group quotas
+sudo setquota -u username 100000 110000 0 0 /home  # Set user quota
+
+# Check quotas:
+quota -u username                       # Check user quota
+quota -g groupname                      # Check group quota
+sudo repquota /home                     # Show all quotas
+
+## 13. FILESYSTEM ENCRYPTION (LUKS)
+# Install cryptsetup:
+sudo apt install cryptsetup             # Install encryption tools
+
+# Encrypt partition:
+sudo cryptsetup luksFormat /dev/sdb1    # Encrypt partition
+sudo cryptsetup luksOpen /dev/sdb1 encrypted_disk  # Open encrypted partition
+sudo mkfs.ext4 /dev/mapper/encrypted_disk  # Create filesystem
+sudo mount /dev/mapper/encrypted_disk /mnt/encrypted  # Mount
+
+# Manage LUKS:
+sudo cryptsetup luksDump /dev/sdb1      # Show LUKS header info
+sudo cryptsetup luksAddKey /dev/sdb1    # Add additional key
+sudo cryptsetup luksRemoveKey /dev/sdb1 # Remove key
+sudo cryptsetup luksClose encrypted_disk # Close encrypted device
+
+## 14. NETWORK FILESYSTEMS
+# NFS mount:
+sudo mount -t nfs server:/path/to/share /mnt/nfs  # Mount NFS share
+sudo umount /mnt/nfs                    # Unmount NFS
+showmount -e nfs-server                 # Show exports from NFS server
+
+# CIFS/SMB mount:
+sudo mount -t cifs //server/share /mnt/samba -o username=user  # Mount SMB share
+sudo mount -t cifs //server/share /mnt/samba -o credentials=/etc/samba/credentials
+sudo umount /mnt/samba                  # Unmount SMB share
+
+# Install NFS/CIFS tools:
+sudo apt install nfs-common             # NFS client tools
+sudo apt install cifs-utils             # CIFS/SMB tools
+
+## 15. FILESYSTEM PERFORMANCE & MONITORING
+# I/O monitoring:
+iostat -x 1                            # Extended I/O statistics
+iotop                                  # I/O usage by process
+iotop -o                               # Only show processes doing I/O
+
+# Filesystem performance:
+sudo hdparm -tT /dev/sda                # Test disk performance
+dd if=/dev/zero of=/tmp/test bs=1M count=1000  # Write test
+dd if=/tmp/test of=/dev/null bs=1M      # Read test
+
+# Disk usage analysis:
+ncdu /home                             # Interactive disk usage analyzer
+baobab                                 # GUI disk usage analyzer (if desktop)
+du -h --max-depth=1 /var               # Disk usage by directory
+
+## 16. ADVANCED STORAGE TOOLS
+# Partition alignment:
+sudo parted /dev/sdb align-check optimal 1  # Check partition alignment
+sudo fdisk -l /dev/sdb | grep "Units\|sector"  # Check sector size
+
+# Block device information:
+lsblk -t                               # Show topology information
+lsblk -D                               # Show discard capabilities
+blockdev --getbsz /dev/sdb             # Get block size
+blockdev --getsz /dev/sdb              # Get device size in sectors
+
+# Loop devices:
+sudo losetup -f disk.img               # Set up loop device
+sudo losetup -a                        # List loop devices
+sudo losetup -d /dev/loop0             # Detach loop device
+
+## 17. TROUBLESHOOTING STORAGE ISSUES
+# Check for filesystem errors:
+dmesg | grep -i error                  # Kernel error messages
+journalctl -p err                      # System error logs
+cat /var/log/syslog | grep -i "I/O error"  # I/O errors in syslog
+
+# Disk health:
+sudo smartctl -H /dev/sda              # Health status
+sudo smartctl -a /dev/sda              # All SMART data
+sudo badblocks -v /dev/sdb1            # Test for bad blocks
+
+# Force unmount:
+sudo umount -f /mnt/stuck              # Force unmount
+sudo umount -l /mnt/stuck              # Lazy unmount
+lsof /mnt/stuck                        # Find processes using mountpoint
+sudo fuser -m /mnt/stuck               # Find processes using mountpoint
+sudo fuser -km /mnt/stuck              # Kill processes using mountpoint
+
+## 18. BACKUP & RECOVERY
+# dd for disk cloning:
+sudo dd if=/dev/sda of=/dev/sdb bs=4M status=progress  # Clone disk
+sudo dd if=/dev/sda of=disk_backup.img bs=4M  # Create disk image
+sudo dd if=disk_backup.img of=/dev/sdb bs=4M  # Restore from image
+
+# Partition table backup:
+sudo sfdisk -d /dev/sda > partition_table.txt  # Backup partition table
+sudo sfdisk /dev/sdb < partition_table.txt     # Restore partition table
+
+# MBR backup:
+sudo dd if=/dev/sda of=mbr_backup.bin bs=512 count=1  # Backup MBR
+sudo dd if=mbr_backup.bin of=/dev/sda bs=512 count=1  # Restore MBR
+
+## LPIC STORAGE TROUBLESHOOTING CHECKLIST:
+1. Check disk health (smartctl, dmesg)
+2. Verify partition table (fdisk -l, parted -l)
+3. Check filesystem integrity (fsck)
+4. Verify mount points (mount, findmnt)
+5. Check fstab configuration (cat /etc/fstab)
+6. Monitor I/O performance (iostat, iotop)
+7. Check disk space (df -h, du -h)
+8. Verify permissions and ownership
+9. Check for RAID issues (cat /proc/mdstat)
+10. Test with minimal mount options

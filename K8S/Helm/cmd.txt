@@ -1,0 +1,2 @@
+helm version => Check version
+helm env => Check biến môi trường của helm

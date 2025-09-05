@@ -1,0 +1,177 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# C:\Users\XYLITOL\VirtualBox VMs => Các cấu hình được lưu trữ tại đây
+# Pass: Bokute22102000
+# etc host 
+
+# 192.168.1.90 rancher-server
+
+Vagrant.configure("2") do |config|
+  # Base box Ubuntu 22.04 LTS
+  config.vm.box = "ubuntu/jammy64"
+  
+  # Cấu hình chung cho tất cả máy ảo
+  config.vm.boot_timeout = 600  # Tăng timeout lên 10 phút
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "4096"
+    vb.cpus = 2
+    vb.gui = false  # Bật GUI để debug
+    # Tối ưu VirtualBox
+    vb.customize ["modifyvm", :id, "--vram", "16"]
+    vb.customize ["modifyvm", :id, "--accelerate3d", "off"]
+  end
+
+  # Định nghĩa 3 máy ảo K8s
+  machines = [
+    { name: "rancher-server", ip: "192.168.1.90", memory: 4096, cpus: 2, disk: 20 },
+  ]
+
+  machines.each do |machine|
+    config.vm.define machine[:name] do |node|
+      # Hostname
+      node.vm.hostname = machine[:name]
+      
+      # Network - Bridge mode với IP tĩnh
+      node.vm.network "public_network", 
+        ip: machine[:ip],
+        netmask: "255.255.255.0",
+        bridge: "Realtek 8852CE WiFi 6E PCI-E NIC"
+      
+      # Provider-specific settings
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = machine[:name]
+        vb.memory = machine[:memory]
+        vb.cpus = machine[:cpus]
+        
+        # Tối ưu cho K8s
+        vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+        
+      end
+
+      # Provisioning script chung
+      node.vm.provision "shell", inline: <<-SHELL
+        # Update system
+        apt-get update
+        apt-get upgrade -y
+        
+        # Cấu hình hosts file
+        cat >> /etc/hosts << 'EOF'
+127.0.0.1 localhost
+192.168.1.90 rancher-server
+EOF
+
+        # Cấu hình netplan cho IP tĩnh
+        cat > /etc/netplan/50-vagrant.yaml << 'EOF'
+network:
+  version: 2
+  ethernets:
+    enp0s8:
+      dhcp4: false
+      addresses:
+        - #{machine[:ip]}/24
+      gateway4: 192.168.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+EOF
+
+        # Áp dụng netplan
+        netplan apply
+        
+        # Tạo user bodevops
+        useradd -m -s /bin/bash bodevops
+        echo 'bodevops:bodevops' | chpasswd
+        
+        # Thêm bodevops vào sudo group
+        usermod -aG sudo bodevops
+        
+        # Cho phép bodevops sudo không cần password
+        echo 'bodevops ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+        
+        # Tạo SSH key cho user bodevops
+        sudo -u bodevops ssh-keygen -t rsa -b 4096 -f /home/bodevops/.ssh/id_rsa -N ""
+
+        # Cập nhật và nâng cấp hệ thống
+        sudo apt update -y && sudo apt upgrade -y
+
+        # Cài đặt Docker và Docker Compose
+        echo "Cài đặt Docker..."
+        
+        # Cập nhật package index
+        apt-get update
+        
+        # Cài đặt các package cần thiết
+        apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+        
+        # Thêm Docker GPG key
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        
+        # Thêm Docker repository
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+        
+        # Cập nhật package index lại
+        apt-get update
+        
+        # Cài đặt Docker CE
+        apt-get install -y docker-ce docker-ce-cli containerd.io
+        
+        # Khởi động và enable Docker service
+        systemctl start docker
+        systemctl enable docker
+        
+        # Thêm user bodevops vào docker group
+        usermod -aG docker bodevops
+        usermod -aG docker vagrant
+        
+        # Cài đặt Docker Compose
+        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+        
+        # Kiểm tra cài đặt
+        docker --version
+        docker-compose --version
+
+        # Cấu hình disk thứ 2 cho /data (comment tạm thời)
+        # echo "Cấu hình disk thứ 2..."
+        # mkfs.ext4 -m 0 /dev/sdb
+        # echo "/dev/sdb  /data  ext4  defaults  0  0" >> /etc/fstab
+        # mount -a
+        # df -h
+        # lsblk
+        
+        # Tạo thư mục /data trên disk chính
+        mkdir -p /data
+        
+        # Tạo thư mục cho Rancher
+        mkdir -p /data/rancher/data
+        
+        # Cài đặt Rancher với Docker Compose - Cấu hình đơn giản
+        cat > /data/rancher/docker-compose.yml << 'EOF'
+services:
+  rancher-server:
+    image: rancher/rancher:v2.9.2 
+    container_name: rancher-server
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /data/rancher/data:/var/lib/rancher
+    environment:
+      - CATTLE_BOOTSTRAP_PASSWORD=admin
+    privileged: true
+EOF
+
+        # Khởi động Rancher với Docker Compose
+        cd /data/rancher
+        docker-compose up -d
+        
+        echo "=== Rancher Server Setup Completed ==="
+        echo "Rancher URL: https://192.168.1.90"
+        echo "Username: admin, Password: admin"
+      SHELL
+    end
+  end
+end

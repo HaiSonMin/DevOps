@@ -1,0 +1,50 @@
+Cấu hình netplan (Cấu hình ip tĩnh)
+
+sudo -i # Chuyển qua Root
+
+nano /etc/hostname => Sửa hostname server
+
+ip link show # Kiểm tra tên interface
+
+nmap -sn 192.168.1.1/24 # Kiểm tra IP đã sử dụng -> Đảm bảo 192.168.1.100 chưa bị chiếm
+
+nano /etc/netplan/00-installer-config.yaml
+
+# ----
+# Cấu hình theo Bridge mode
+network:
+  version: 2
+  ethernets:
+    ens33:  # Thay bằng tên interface thật của VM
+	  dhcp4: false
+      addresses:
+        - 192.168.1.101/24  # Chọn IP trong dải 192.168.1.x
+      gateway4: 192.168.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+# ----
+		  
+netplan apply # Áp dụng
+
+ip -a # Xem thông tin cấu hình network
+
+# ---------------------------------------------
+
+Cấu hình host cho từng server
+
+nano /etc/hosts
+
+127.0.0.1 localhost
+
+192.186.1.101 k8s-master-1
+192.186.1.102 k8s-master-2
+192.186.1.103 k8s-master-3
+
+
+Reset cụm
+
+sudo kubeadm reset -f =-> Thực hiện trên tất cả các node
+sudo rm -rf /var/lib/etcd
+sudo rm -rf /etc/Kubernetes/manifests/*

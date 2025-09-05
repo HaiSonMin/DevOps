@@ -1,0 +1,132 @@
+# UBUNTU USER MANAGEMENT COMMANDS - COMPLETE GUIDE
+
+## 1. THÊM USER (Adding Users)
+sudo useradd username                    # Tạo user cơ bản (không tự động tạo home dir)
+sudo adduser username                    # Tạo user với home directory và prompt nhập thông tin  
+sudo useradd -m username                 # Tạo user với home directory
+sudo useradd -m -s /bin/bash username    # Tạo user với home dir và shell bash
+sudo useradd -m -G group1,group2 username # Tạo user và thêm vào groups
+sudo useradd -m -d /home/custompath -s /bin/bash -c "Full Name" -G sudo username
+sudo useradd -m -u 1001 username         # Tạo user với UID cụ thể
+sudo useradd -m -e 2024-12-31 username   # Tạo user với ngày hết hạn
+
+## 2. XÓA USER (Removing Users)
+sudo deluser username                    # Xóa user (giữ lại home directory)
+sudo userdel username                    # Xóa user (giữ lại home directory)  
+sudo userdel -r username                 # Xóa user và home directory
+sudo deluser --remove-home username      # Xóa user và home directory
+sudo deluser --remove-all-files username # Xóa user và tất cả files của user
+
+## 3. SỬA THÔNG TIN USER (Modifying Users)
+sudo usermod -l newname oldname          # Đổi tên user
+sudo usermod -d /new/home/path username  # Thay đổi home directory
+sudo usermod -m -d /new/home username    # Di chuyển home directory  
+sudo usermod -s /bin/zsh username        # Thay đổi shell
+sudo usermod -c "New Full Name" username # Thay đổi comment/full name
+sudo usermod -u 1002 username           # Thay đổi UID
+sudo usermod -L username                 # Khóa user (lock)
+sudo usermod -U username                 # Mở khóa user (unlock)
+sudo usermod -e 2024-12-31 username     # Set ngày hết hạn
+sudo usermod -e "" username              # Xóa ngày hết hạn
+
+## 4. QUẢN LÝ PASSWORD
+sudo passwd username                     # Thay đổi password cho user
+passwd                                   # Thay đổi password của user hiện tại
+sudo passwd -e username                  # Buộc user đổi password lần đăng nhập tiếp
+sudo passwd -d username                  # Xóa password (tạo account không password)
+sudo passwd -S username                  # Xem trạng thái password
+sudo passwd -l username                  # Khóa password
+sudo passwd -u username                  # Mở khóa password
+
+# Cấu hình password aging
+sudo chage -l username                   # Xem thông tin password aging
+sudo chage -M 90 username                # Set tối đa 90 ngày cho password
+sudo chage -m 7 username                 # Set tối thiểu 7 ngày trước khi đổi password
+sudo chage -W 7 username                 # Cảnh báo 7 ngày trước khi hết hạn
+sudo chage -I 30 username                # Khóa account sau 30 ngày password hết hạn
+sudo chage -E 2024-12-31 username        # Set ngày hết hạn account
+
+## 5. QUẢN LÝ GROUP
+sudo groupadd groupname                  # Tạo group mới
+sudo groupadd -g 1001 groupname         # Tạo group với GID cụ thể
+sudo delgroup groupname                  # Xóa group
+sudo groupdel groupname                  # Xóa group
+sudo adduser username groupname          # Thêm user vào group
+sudo usermod -aG groupname username    # Thêm user vào group (append)
+sudo usermod -G group1,group2 username   # Set groups cho user (replace)
+sudo gpasswd -a username groupname       # Thêm user vào group
+sudo deluser username groupname          # Xóa user khỏi group
+sudo gpasswd -d username groupname       # Xóa user khỏi group
+
+## 6. PHÂN QUYỀN VÀ SUDO
+sudo adduser username sudo               # Thêm user vào sudo group
+sudo usermod -a -G sudo username         # Thêm user vào sudo group
+sudo visudo                              # Chỉnh sửa sudoers file an toàn
+sudo visudo -f /etc/sudoers.d/username   # Tạo file sudo riêng cho user
+
+# Các dòng phổ biến trong sudoers:
+# username ALL=(ALL:ALL) ALL              # User có full sudo
+# username ALL=(ALL) NOPASSWD: ALL        # User có sudo không cần password  
+# username ALL=(ALL) /usr/bin/systemctl   # User chỉ được dùng systemctl
+
+## 7. XEM THÔNG TIN USER VÀ GROUP
+id username                              # Xem UID, GID và groups của user
+id                                       # Xem thông tin user hiện tại
+whoami                                   # Xem tên user hiện tại
+who                                      # Xem user đang đăng nhập
+w                                        # Xem user đang đăng nhập và hoạt động
+last                                     # Xem lịch sử đăng nhập
+lastlog                                  # Xem lần đăng nhập cuối của tất cả user
+getent passwd                            # Liệt kê tất cả users
+getent group                             # Liệt kê tất cả groups
+cat /etc/passwd                          # Xem file passwd
+cat /etc/group                           # Xem file group  
+sudo cat /etc/shadow                     # Xem file shadow
+groups username                          # Xem groups của user cụ thể
+groups                                   # Xem groups của user hiện tại
+
+## 8. CHUYỂN ĐỔI USER  
+su username                              # Chuyển sang user khác (cần password)
+su - username                            # Chuyển sang user khác với environment mới
+sudo su username                         # Chuyển sang user khác (dùng sudo)
+sudo su -                                # Chuyển sang root
+sudo -u username command                 # Chạy command với quyền user khác
+sudo -i                                  # Tạo login shell với quyền root
+
+## 9. QUẢN LÝ HOME DIRECTORY
+sudo mkhomedir_helper username           # Tạo home directory cho user
+sudo cp -r /etc/skel /home/username      # Copy skeleton files
+sudo chown -R username:username /home/username # Set ownership
+chmod 700 /home/username                 # Chỉ user được truy cập home dir
+chmod 755 /home/username                 # Cho phép others đọc và thực thi
+
+## 10. KIỂM TRA VÀ TROUBLESHOOTING
+sudo pwck                                # Kiểm tra tính toàn vẹn /etc/passwd
+sudo grpck                               # Kiểm tra tính toàn vẹn /etc/group
+sudo vipw                                # Edit /etc/passwd an toàn
+sudo vigr                                # Edit /etc/group an toàn
+sudo journalctl -u ssh                   # Xem logs SSH
+sudo tail -f /var/log/auth.log           # Xem logs authentication
+
+## 11. BACKUP USER DATA
+sudo tar -czf user_backup.tar.gz /home/username /var/spool/mail/username
+getent passwd username >> users_backup.txt
+getent group | grep username >> groups_backup.txt
+
+## 12. BATCH OPERATIONS  
+newusers users.txt                       # Tạo nhiều user từ file
+# File format: user:password:uid:gid:comment:home:shell
+
+## 13. SECURITY BEST PRACTICES
+sudo usermod -s /usr/sbin/nologin username # Vô hiệu hóa shell login
+sudo usermod -s /bin/false username       # Vô hiệu hóa hoàn toàn login
+sudo adduser --system --group servicename # Tạo system user
+sudo useradd -r -s /bin/false servicename # System user không shell
+
+## CÁC FILE QUAN TRỌNG:
+# /etc/passwd - Thông tin user cơ bản
+# /etc/group - Thông tin group  
+# /etc/shadow - Password hashes (cần sudo)
+# /etc/sudoers - Cấu hình sudo
+# /etc/login.defs - Cấu hình mặc định cho user
+# /etc/skel - Template files cho home directory mới

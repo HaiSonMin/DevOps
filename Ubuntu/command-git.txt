@@ -1,0 +1,282 @@
+# UBUNTU GIT VERSION CONTROL - COMPLETE GUIDE
+
+## 1. GIT INSTALLATION & SETUP
+sudo apt update                         # Update package list
+sudo apt install git                    # Install Git
+git --version                          # Check Git version
+git config --global user.name "Your Name"  # Set username
+git config --global user.email "your@email.com"  # Set email
+git config --global init.defaultBranch main  # Set default branch name
+git config --list                       # Show all configuration
+git config --global --list             # Show global configuration
+git config --global core.editor nano    # Set default editor
+
+## 2. REPOSITORY INITIALIZATION & CLONING
+git init                                # Initialize new repository
+git init project-name                   # Initialize with directory name
+git clone https://github.com/user/repo.git  # Clone repository
+git clone https://github.com/user/repo.git folder-name  # Clone to specific folder
+git clone --depth 1 https://github.com/user/repo.git  # Shallow clone (latest commit only)
+git remote -v                          # Show remote repositories
+git remote add origin https://github.com/user/repo.git  # Add remote
+git remote remove origin               # Remove remote
+git remote rename origin upstream      # Rename remote
+
+## 3. BASIC GIT WORKFLOW
+git status                              # Check status of files
+git status -s                           # Short status format
+git add filename                        # Add specific file to staging
+git add .                              # Add all files to staging
+git add *.txt                          # Add files by pattern
+git add -A                             # Add all changes (including deletes)
+git add -u                             # Add only modified/deleted files
+git commit -m "Commit message"         # Commit with message
+git commit -am "Message"               # Add and commit modified files
+git commit --amend                     # Amend last commit
+git commit --amend -m "New message"    # Amend with new message
+
+## 4. VIEWING HISTORY & CHANGES
+git log                                # Show commit history
+git log --oneline                      # Compact log format
+git log --graph                        # Show branch graph
+git log --all --graph --oneline        # All branches compact graph
+git log -p                             # Show patches (diffs)
+git log -n 5                           # Show last 5 commits
+git log --since="2 weeks ago"          # Show commits since timeframe
+git log --author="Author Name"         # Show commits by author
+git log --grep="keyword"               # Search commit messages
+git show commit_hash                   # Show specific commit
+git show HEAD                          # Show latest commit
+git diff                               # Show unstaged changes
+git diff --staged                      # Show staged changes
+git diff commit1 commit2               # Compare two commits
+git diff branch1 branch2               # Compare two branches
+
+## 5. BRANCH MANAGEMENT
+git branch                             # List local branches
+git branch -a                          # List all branches (local + remote)
+git branch -r                          # List remote branches
+git branch branch-name                 # Create new branch
+git checkout branch-name               # Switch to branch
+git checkout -b new-branch             # Create and switch to branch
+git switch branch-name                 # Modern way to switch branches
+git switch -c new-branch               # Create and switch (modern)
+git branch -d branch-name              # Delete branch (safe)
+git branch -D branch-name              # Force delete branch
+git branch -m old-name new-name        # Rename branch
+git push origin --delete branch-name   # Delete remote branch
+
+## 6. MERGING & REBASING
+git merge branch-name                  # Merge branch into current
+git merge --no-ff branch-name          # Merge with merge commit
+git merge --squash branch-name         # Squash merge
+git rebase branch-name                 # Rebase current branch
+git rebase -i HEAD~3                   # Interactive rebase (last 3 commits)
+git rebase --continue                  # Continue rebase after resolving conflicts
+git rebase --abort                     # Abort rebase
+git cherry-pick commit-hash            # Apply specific commit
+git cherry-pick commit1..commit3       # Apply range of commits
+
+## 7. WORKING WITH REMOTES
+git fetch                              # Fetch changes from remote
+git fetch origin                       # Fetch from specific remote
+git pull                               # Fetch and merge
+git pull origin main                   # Pull from specific branch
+git pull --rebase                      # Pull with rebase instead of merge
+git push                               # Push changes to remote
+git push origin branch-name            # Push branch to remote
+git push -u origin branch-name         # Push and set upstream
+git push --force                       # Force push (dangerous)
+git push --force-with-lease            # Safer force push
+git push --tags                        # Push tags to remote
+
+## 8. TAGGING
+git tag                                # List all tags
+git tag v1.0.0                         # Create lightweight tag
+git tag -a v1.0.0 -m "Release v1.0.0"  # Create annotated tag
+git tag -a v1.0.0 commit-hash          # Tag specific commit
+git show v1.0.0                        # Show tag information
+git push origin v1.0.0                 # Push specific tag
+git push origin --tags                 # Push all tags
+git tag -d v1.0.0                      # Delete local tag
+git push origin --delete v1.0.0        # Delete remote tag
+
+## 9. STASHING
+git stash                              # Stash current changes
+git stash save "Work in progress"      # Stash with message
+git stash list                         # List all stashes
+git stash show                         # Show stash changes
+git stash show -p                      # Show stash diff
+git stash apply                        # Apply latest stash
+git stash apply stash@{2}              # Apply specific stash
+git stash pop                          # Apply and remove stash
+git stash drop                         # Remove latest stash
+git stash drop stash@{2}               # Remove specific stash
+git stash clear                        # Remove all stashes
+
+## 10. UNDOING CHANGES
+git restore filename                   # Discard changes in working directory
+git restore --staged filename          # Unstage file
+git checkout -- filename              # Discard changes (old syntax)
+git reset HEAD filename                # Unstage file (old syntax)
+git reset --soft HEAD~1                # Undo commit, keep changes staged
+git reset --mixed HEAD~1               # Undo commit, unstage changes
+git reset --hard HEAD~1                # Undo commit, discard changes
+git revert commit-hash                 # Create new commit that undoes changes
+git clean -f                           # Remove untracked files
+git clean -fd                          # Remove untracked files and directories
+git clean -n                           # Preview what would be removed
+
+## 11. CONFLICT RESOLUTION
+# During merge conflict:
+git status                             # See conflicted files
+# Edit files to resolve conflicts
+git add conflicted-file                # Mark as resolved
+git commit                             # Complete merge
+git merge --abort                      # Abort merge
+# Tools for conflict resolution:
+git mergetool                          # Launch merge tool
+git config --global merge.tool vimdiff  # Set merge tool
+
+## 12. GIT CONFIGURATION
+git config --global user.name "Name"   # Global username
+git config --global user.email "email" # Global email
+git config --global core.autocrlf true # Windows line endings
+git config --global core.autocrlf input # Mac/Linux line endings
+git config --global alias.st status    # Create alias for status
+git config --global alias.co checkout  # Create alias for checkout
+git config --global alias.br branch    # Create alias for branch
+git config --global alias.ci commit    # Create alias for commit
+git config --global --unset alias.st   # Remove alias
+
+## 13. .gitignore
+# Create .gitignore file:
+echo "*.log" >> .gitignore             # Ignore log files
+echo "node_modules/" >> .gitignore     # Ignore node_modules directory
+echo ".env" >> .gitignore              # Ignore environment file
+# Common patterns:
+*.log                                  # All log files
+build/                                 # Build directory
+.DS_Store                              # Mac system files
+node_modules/                          # Node.js dependencies
+*.tmp                                  # Temporary files
+# Check if file is ignored:
+git check-ignore filename
+
+## 14. GIT HOOKS
+ls .git/hooks/                         # List available hooks
+# Common hooks:
+# pre-commit: Run before commit
+# post-commit: Run after commit  
+# pre-push: Run before push
+# Example pre-commit hook:
+#!/bin/sh
+npm test                               # Run tests before commit
+
+## 15. GIT ADVANCED COMMANDS
+git reflog                             # Show reference log
+git fsck                               # Check repository integrity
+git gc                                 # Garbage collection (cleanup)
+git archive --format=zip --output=project.zip HEAD  # Create archive
+git bundle create repo.bundle HEAD main  # Create bundle
+git clone repo.bundle cloned-repo      # Clone from bundle
+git submodule add https://github.com/user/repo.git path  # Add submodule
+git submodule update --init --recursive  # Initialize submodules
+git worktree add ../project-feature feature-branch  # Create worktree
+
+## 16. GIT ALIASES (Useful shortcuts)
+git config --global alias.unstage 'reset HEAD --'
+git config --global alias.last 'log -1 HEAD'
+git config --global alias.visual '!gitk'
+git config --global alias.st status
+git config --global alias.co checkout
+git config --global alias.br branch
+git config --global alias.ci commit
+git config --global alias.lg "log --oneline --graph --all"
+git config --global alias.amend "commit --amend --no-edit"
+
+## 17. GIT WORKFLOWS
+# Feature Branch Workflow:
+git checkout -b feature-branch         # Create feature branch
+# Work on feature
+git add .
+git commit -m "Add feature"
+git checkout main                      # Switch to main
+git merge feature-branch               # Merge feature
+git branch -d feature-branch           # Delete feature branch
+
+# Gitflow Workflow:
+git checkout -b develop                # Create develop branch
+git checkout -b feature/new-feature    # Create feature branch
+# Work on feature, then:
+git checkout develop
+git merge feature/new-feature
+git checkout -b release/1.0.0          # Create release branch
+git checkout main
+git merge release/1.0.0
+git tag v1.0.0
+
+## 18. GIT TROUBLESHOOTING
+git status                             # Check repository state
+git log --oneline -10                  # Recent commits
+git reflog                             # Reference log (recovery)
+git fsck --full                        # Check integrity
+# Fix detached HEAD:
+git checkout main
+# Recover lost commits:
+git reflog
+git checkout commit-hash
+git branch recovery-branch
+# Fix corrupted repository:
+git fsck --full
+git gc --aggressive
+
+## 19. GIT PERFORMANCE & MAINTENANCE
+git gc                                 # Garbage collection
+git gc --aggressive                    # Aggressive cleanup
+git prune                              # Remove unreachable objects
+git count-objects -v                   # Repository statistics
+git verify-pack -v .git/objects/pack/*.idx  # Pack file info
+# Large file handling:
+git-lfs track "*.psd"                  # Track large files with LFS
+git add .gitattributes                 # Add LFS attributes
+
+## 20. GIT COLLABORATION BEST PRACTICES
+# Before starting work:
+git pull origin main                   # Get latest changes
+# Before pushing:
+git pull --rebase origin main         # Rebase on latest main
+# Commit message format:
+# <type>(<scope>): <description>
+# Examples:
+git commit -m "feat(auth): add login functionality"
+git commit -m "fix(ui): resolve button alignment issue"
+git commit -m "docs: update README installation steps"
+
+## USEFUL GIT ONE-LINERS:
+# Undo last commit (keep changes):
+git reset --soft HEAD~1
+
+# Show changed files in last commit:
+git diff-tree --no-commit-id --name-only -r HEAD
+
+# Delete all merged branches:
+git branch --merged | grep -v "\*\|main\|develop" | xargs -n 1 git branch -d
+
+# Find commits that changed a specific file:
+git log --follow -- filename
+
+# Show commits between two dates:
+git log --since="2023-01-01" --until="2023-12-31"
+
+# Create patch file:
+git format-patch -1 HEAD
+
+# Apply patch:
+git apply patch-file.patch
+
+# Show file content at specific commit:
+git show commit-hash:filename
+
+# Blame with line numbers:
+git blame -L 10,20 filename

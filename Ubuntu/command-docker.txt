@@ -1,0 +1,300 @@
+# UBUNTU DOCKER COMMANDS - COMPLETE GUIDE
+
+## 1. DOCKER INSTALLATION
+# Remove old versions:
+sudo apt-get remove docker docker-engine docker.io containerd runc
+
+# Install dependencies:
+sudo apt-get update
+sudo apt-get install apt-transport-https ca-certificates curl gnupg lsb-release
+
+# Add Docker GPG key:
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Add Docker repository:
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker:
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+# Add user to docker group:
+sudo usermod -aG docker $USER
+newgrp docker
+
+## 2. DOCKER SERVICE MANAGEMENT
+sudo systemctl start docker             # Start Docker service
+sudo systemctl enable docker            # Enable Docker at boot
+sudo systemctl status docker            # Check Docker status
+sudo systemctl stop docker              # Stop Docker service
+sudo systemctl restart docker           # Restart Docker service
+docker version                          # Check Docker version
+docker info                             # Docker system information
+
+## 3. DOCKER IMAGE MANAGEMENT
+docker images                           # List local images
+docker pull image_name                  # Download image
+docker pull image_name:tag              # Download specific tag
+docker search image_name                # Search Docker Hub for images
+docker build -t image_name .            # Build image from Dockerfile
+docker build -t image_name:tag .        # Build with specific tag
+docker build -f Dockerfile.prod .       # Build with specific Dockerfile
+docker rmi image_name                   # Remove image
+docker rmi image_id                     # Remove image by ID
+docker rmi -f image_name                # Force remove image
+docker image prune                      # Remove unused images
+docker image prune -a                   # Remove all unused images
+
+## 4. DOCKER CONTAINER OPERATIONS
+docker run image_name                   # Run container from image
+docker run -d image_name                # Run in detached mode
+docker run -it image_name               # Interactive terminal
+docker run -p 8080:80 image_name        # Port mapping
+docker run -v /host/path:/container/path image_name  # Volume mount
+docker run --name container_name image_name  # Name container
+docker run -e ENV_VAR=value image_name  # Set environment variable
+docker ps                               # List running containers
+docker ps -a                            # List all containers (running + stopped)
+docker start container_name             # Start stopped container
+docker stop container_name              # Stop running container
+docker restart container_name           # Restart container
+docker rm container_name                # Remove container
+docker rm -f container_name             # Force remove running container
+docker container prune                  # Remove all stopped containers
+
+## 5. DOCKER EXEC & LOGS
+docker exec -it container_name bash     # Enter running container
+docker exec -it container_name /bin/sh  # Enter with sh shell
+docker exec container_name command      # Execute command in container
+docker logs container_name              # View container logs
+docker logs -f container_name           # Follow logs realtime
+docker logs --tail 50 container_name    # Last 50 log lines
+docker logs --since 1h container_name   # Logs from last hour
+docker inspect container_name           # Detailed container info
+docker stats                            # Resource usage of running containers
+docker stats container_name             # Stats for specific container
+
+## 6. DOCKER VOLUME MANAGEMENT
+docker volume create volume_name        # Create volume
+docker volume ls                        # List volumes
+docker volume inspect volume_name       # Volume details
+docker volume rm volume_name            # Remove volume
+docker volume prune                     # Remove unused volumes
+docker run -v volume_name:/path image_name  # Use named volume
+docker run -v /host/path:/container/path image_name  # Bind mount
+docker run --mount type=volume,source=vol_name,target=/path image_name
+
+## 7. DOCKER NETWORK MANAGEMENT
+docker network create network_name      # Create custom network
+docker network ls                       # List networks
+docker network inspect network_name     # Network details
+docker network rm network_name          # Remove network
+docker network prune                    # Remove unused networks
+docker run --network network_name image_name  # Connect to network
+docker network connect network_name container_name  # Connect running container
+docker network disconnect network_name container_name  # Disconnect container
+
+## 8. DOCKERFILE CREATION
+# Basic Dockerfile example:
+FROM ubuntu:20.04
+RUN apt-get update && apt-get install -y nginx
+COPY . /var/www/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+# Dockerfile instructions:
+FROM base_image                         # Base image
+RUN command                             # Execute command during build
+COPY source dest                        # Copy files from host
+ADD source dest                         # Copy + extract archives
+WORKDIR /path                           # Set working directory
+EXPOSE port                             # Expose port
+CMD ["command"]                         # Default command
+ENTRYPOINT ["command"]                  # Entry point command
+ENV VAR=value                           # Set environment variable
+ARG VAR=default                         # Build argument
+USER username                           # Switch user
+VOLUME /path                            # Create mount point
+
+## 9. DOCKER COMPOSE
+# Install Docker Compose:
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Docker Compose commands:
+docker-compose up                       # Start services
+docker-compose up -d                    # Start in detached mode
+docker-compose down                     # Stop and remove services
+docker-compose ps                       # List running services
+docker-compose logs                     # View logs
+docker-compose logs service_name        # Logs for specific service
+docker-compose exec service_name bash   # Enter service container
+docker-compose build                    # Build services
+docker-compose pull                     # Pull service images
+docker-compose restart                  # Restart services
+docker-compose scale service_name=3     # Scale service to 3 replicas
+
+## 10. DOCKER COMPOSE FILE (docker-compose.yml)
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/code
+    environment:
+      - DEBUG=1
+    depends_on:
+      - db
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:
+
+## 11. DOCKER REGISTRY & PUSH/PULL
+docker tag image_name username/image_name:tag  # Tag image for registry
+docker login                            # Login to Docker Hub
+docker push username/image_name:tag     # Push image to registry
+docker pull username/image_name:tag     # Pull image from registry
+docker logout                           # Logout from registry
+# Private registry:
+docker tag image_name localhost:5000/image_name
+docker push localhost:5000/image_name
+
+## 12. DOCKER SYSTEM MANAGEMENT
+docker system df                        # Disk usage by Docker
+docker system info                      # System information  
+docker system prune                     # Remove unused data
+docker system prune -a                  # Remove all unused data
+docker system prune --volumes           # Include unused volumes
+docker system events                    # Real-time events
+
+## 13. DOCKER CONTAINER MONITORING
+docker top container_name               # Process list in container
+docker port container_name              # Port mappings
+docker diff container_name              # Changes in container filesystem
+ctop                                    # Third-party container monitor (install: sudo wget https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-amd64 -O /usr/local/bin/ctop && sudo chmod +x /usr/local/bin/ctop)
+docker stats --no-stream               # One-time stats snapshot
+
+## 14. DOCKER BACKUP & RESTORE
+# Backup container:
+docker export container_name > container_backup.tar
+# Restore container:
+docker import container_backup.tar new_image_name
+
+# Backup image:
+docker save image_name > image_backup.tar
+# Restore image:
+docker load < image_backup.tar
+
+# Backup volume:
+docker run --rm -v volume_name:/data -v $(pwd):/backup alpine tar czf /backup/volume_backup.tar.gz -C /data .
+# Restore volume:
+docker run --rm -v volume_name:/data -v $(pwd):/backup alpine tar xzf /backup/volume_backup.tar.gz -C /data
+
+## 15. DOCKER TROUBLESHOOTING
+docker ps -a                            # Check all containers
+docker logs container_name              # Check container logs
+docker inspect container_name           # Detailed container info
+docker exec -it container_name bash     # Debug inside container
+docker system df                        # Check disk usage
+docker system prune                     # Clean up unused resources
+sudo systemctl status docker            # Check Docker daemon
+sudo journalctl -u docker               # Docker daemon logs
+docker info                             # Docker system info
+# Fix permission issues:
+sudo chown $USER:$USER ~/.docker -R
+sudo chmod g+rwx ~/.docker -R
+
+## 16. DOCKER MULTI-STAGE BUILDS
+# Multi-stage Dockerfile:
+FROM node:16-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+EXPOSE 80
+
+## 17. DOCKER HEALTH CHECKS
+# In Dockerfile:
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD curl -f http://localhost/ || exit 1
+
+# Check health:
+docker inspect --format='{{.State.Health.Status}}' container_name
+docker ps --filter health=unhealthy
+
+## 18. DOCKER SECRETS (Swarm mode)
+docker secret create secret_name secret_file
+docker secret ls
+docker service create --secret secret_name image_name
+docker secret rm secret_name
+
+## 19. USEFUL DOCKER ONE-LINERS
+# Stop all running containers:
+docker stop $(docker ps -aq)
+
+# Remove all containers:
+docker rm $(docker ps -aq)
+
+# Remove all images:
+docker rmi $(docker images -q)
+
+# Remove all unused resources:
+docker system prune -a --volumes
+
+# Enter latest created container:
+docker exec -it $(docker ps -l -q) bash
+
+# Show container IP addresses:
+docker inspect --format='{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
+
+## 20. DOCKER SECURITY BEST PRACTICES
+# Run as non-root user:
+USER 1001
+
+# Use specific image tags:
+FROM ubuntu:20.04
+
+# Scan images for vulnerabilities:
+docker scan image_name
+
+# Limit resources:
+docker run --memory=512m --cpus=1 image_name
+
+# Read-only filesystem:
+docker run --read-only image_name
+
+# Drop capabilities:
+docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE image_name
+
+# Use secrets for sensitive data:
+echo "password" | docker secret create db_password -
+
+## DOCKER DEBUGGING COMMANDS:
+# Debug build issues:
+docker build --no-cache -t image_name .
+docker build --progress=plain -t image_name .
+
+# Debug networking:
+docker network ls
+docker exec container_name ip addr show
+
+# Debug storage:
+docker volume ls
+docker inspect container_name | grep -A 10 Mounts
+
+# Performance debugging:
+docker stats --no-stream
+docker exec container_name top

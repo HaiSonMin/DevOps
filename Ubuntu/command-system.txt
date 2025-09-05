@@ -1,0 +1,245 @@
+# UBUNTU SYSTEM MANAGEMENT - COMPLETE GUIDE
+
+## 1. SERVICE MANAGEMENT (systemctl)
+sudo systemctl start service_name       # Khởi động service
+sudo systemctl stop service_name        # Dừng service
+sudo systemctl restart service_name     # Khởi động lại service
+sudo systemctl reload service_name      # Reload configuration
+sudo systemctl status service_name      # Xem trạng thái service
+sudo systemctl enable service_name      # Bật service khi boot
+sudo systemctl disable service_name     # Tắt service khi boot
+sudo systemctl is-active service_name   # Kiểm tra service có đang chạy
+sudo systemctl is-enabled service_name  # Kiểm tra service có bật khi boot
+systemctl list-units                    # Liệt kê tất cả units
+systemctl list-units --type=service     # Chỉ liệt kê services
+systemctl list-units --failed           # Liệt kê units lỗi
+systemctl daemon-reload                 # Reload systemd configuration
+
+## 2. SERVICE MANAGEMENT (service - legacy)
+sudo service service_name start         # Khởi động service
+sudo service service_name stop          # Dừng service
+sudo service service_name restart       # Khởi động lại service
+sudo service service_name status        # Xem trạng thái service
+service --status-all                    # Liệt kê tất cả services
+
+## 3. PROCESS MANAGEMENT
+ps aux                                   # Liệt kê tất cả processes
+ps -ef                                   # Process tree format
+ps -u username                          # Processes của user cụ thể
+ps -C program_name                       # Processes theo tên chương trình
+pstree                                   # Hiển thị process tree
+pgrep process_name                       # Tìm PID theo tên process
+pkill process_name                       # Kill processes theo tên
+kill PID                                 # Kill process bằng PID
+kill -9 PID                              # Force kill process
+killall process_name                     # Kill tất cả processes cùng tên
+jobs                                     # Hiển thị background jobs
+bg %1                                    # Chuyển job 1 về background
+fg %1                                    # Chuyển job 1 về foreground
+nohup command &                          # Chạy command không bị interrupt
+
+## 4. SYSTEM MONITORING
+top                                      # Task manager realtime
+htop                                     # Enhanced task manager
+atop                                     # Advanced system monitor
+iotop                                    # I/O monitoring
+iftop                                    # Network bandwidth monitoring
+nethogs                                  # Network usage by process
+pidstat                                  # Process statistics
+vmstat 1                                 # Virtual memory statistics
+iostat 1                                 # I/O statistics
+sar -u 1 10                              # CPU usage statistics
+watch command                            # Repeat command every 2 seconds
+watch -n 5 command                       # Repeat command every 5 seconds
+
+## 5. MEMORY MONITORING
+free -h                                  # Memory usage human readable
+free -m                                  # Memory usage in MB
+cat /proc/meminfo                        # Detailed memory information
+ps aux --sort=-%mem | head               # Top processes by memory usage
+smem                                     # Memory reporting tool (cần cài đặt)
+pmap PID                                 # Memory map của process
+
+## 6. CPU MONITORING
+lscpu                                    # CPU information
+cat /proc/cpuinfo                        # Detailed CPU info
+nproc                                    # Number of processing units
+uptime                                   # System load averages
+mpstat                                   # CPU statistics
+ps aux --sort=-%cpu | head               # Top processes by CPU usage
+
+## 7. DISK MONITORING
+df -h                                    # Disk usage human readable
+df -i                                    # Inode usage
+du -h directory                          # Directory size human readable
+du -sh *                                 # Size of all items in current dir
+du -ah | sort -rh | head -20             # Top 20 largest files/dirs
+ncdu                                     # Interactive disk usage analyzer
+lsblk                                    # List block devices
+fdisk -l                                 # List all disk partitions
+blkid                                    # Block device attributes
+
+## 8. SYSTEM LOGS
+journalctl                               # Systemd logs
+journalctl -f                            # Follow logs realtime
+journalctl -u service_name               # Logs cho service cụ thể
+journalctl --since "2 hours ago"         # Logs từ 2 giờ trước
+journalctl --until "1 hour ago"          # Logs đến 1 giờ trước
+journalctl -p err                        # Chỉ error messages
+journalctl -b                            # Logs từ lần boot gần nhất
+journalctl -b -1                         # Logs từ lần boot trước
+dmesg                                    # Kernel ring buffer
+dmesg -w                                 # Watch kernel messages
+tail -f /var/log/syslog                  # Follow system log
+tail -f /var/log/auth.log                # Follow authentication log
+tail -f /var/log/kern.log                # Follow kernel log
+
+## 9. CRON JOBS & SCHEDULING
+crontab -l                               # List cron jobs cho user hiện tại
+crontab -e                               # Edit cron jobs
+sudo crontab -l                          # List root cron jobs
+sudo crontab -u username -l              # List cron jobs cho user cụ thể
+sudo crontab -u username -e              # Edit cron jobs cho user cụ thể
+cat /etc/crontab                         # System-wide cron table
+ls /etc/cron.d/                          # Additional cron files
+ls /etc/cron.daily/                      # Daily cron jobs
+ls /etc/cron.hourly/                     # Hourly cron jobs
+systemctl status cron                    # Cron service status
+at now + 1 hour                          # Schedule one-time job
+atq                                      # List scheduled at jobs
+atrm job_number                          # Remove at job
+
+## 10. SYSTEM INFORMATION
+uname -a                                 # System information
+hostnamectl                              # Hostname and system info
+lsb_release -a                           # Ubuntu version info
+cat /etc/os-release                      # OS release info
+uptime                                   # System uptime and load
+w                                        # Who is logged in
+who                                      # Currently logged users
+last                                     # Login history
+lastlog                                  # Last login for all users
+id                                       # Current user and groups
+whoami                                   # Current username
+
+## 11. HARDWARE INFORMATION
+lshw                                     # Comprehensive hardware info
+lshw -short                              # Hardware summary
+lspci                                    # PCI devices
+lsusb                                    # USB devices
+lsmod                                    # Loaded kernel modules
+modinfo module_name                      # Module information
+dmidecode                                # DMI/SMBIOS hardware info
+hdparm -I /dev/sda                       # Hard disk information
+smartctl -a /dev/sda                     # SMART disk info
+sensors                                  # Temperature sensors
+
+## 12. SYSTEM CONTROL
+sudo reboot                              # Restart system
+sudo shutdown -h now                     # Shutdown immediately
+sudo shutdown -h +10                     # Shutdown in 10 minutes
+sudo shutdown -r +5 "System maintenance" # Restart with message
+sudo halt                                # Halt system
+sudo poweroff                            # Power off system
+sudo systemctl suspend                   # Suspend system
+sudo systemctl hibernate                 # Hibernate system
+init 0                                   # Shutdown (runlevel 0)
+init 6                                   # Reboot (runlevel 6)
+
+## 13. ENVIRONMENT & VARIABLES
+env                                      # Display environment variables
+printenv                                 # Display environment variables
+echo $VARIABLE_NAME                      # Display specific variable
+export VARIABLE=value                    # Set environment variable
+unset VARIABLE                           # Remove environment variable
+set                                      # Display shell variables
+which command                            # Find command location
+type command                             # Command type and location
+whereis command                          # Locate command, source, manual
+
+## 14. DATE & TIME
+date                                     # Current date and time
+date "+%Y-%m-%d %H:%M:%S"               # Formatted date
+timedatectl                              # Time and date settings
+sudo timedatectl set-time "2024-01-01 12:00:00"
+sudo timedatectl set-timezone Asia/Ho_Chi_Minh
+timedatectl list-timezones               # List available timezones
+hwclock                                  # Hardware clock
+cal                                      # Calendar
+cal 2024                                 # Calendar for 2024
+
+## 15. KERNEL MODULES
+lsmod                                    # List loaded modules
+modinfo module_name                      # Module information
+sudo modprobe module_name                # Load module
+sudo modprobe -r module_name             # Remove module
+sudo insmod /path/to/module.ko           # Insert module
+sudo rmmod module_name                   # Remove module
+depmod                                   # Generate module dependencies
+/etc/modules                             # Modules to load at boot
+
+## 16. SYSTEM LIMITS & PERFORMANCE
+ulimit -a                                # Display user limits
+ulimit -n                                # File descriptor limit
+ulimit -u                                # Process limit
+cat /proc/sys/kernel/pid_max             # Maximum PID value
+cat /proc/sys/fs/file-max                # Maximum open files
+sysctl -a                                # All kernel parameters
+sysctl kernel.hostname                   # Specific parameter
+sudo sysctl -w kernel.parameter=value    # Set parameter temporarily
+/etc/sysctl.conf                         # Persistent kernel parameters
+
+## 17. BOOT & INITIALIZATION
+systemctl get-default                    # Current default target
+sudo systemctl set-default multi-user.target  # Set default target
+systemctl list-dependencies             # Dependency tree
+systemctl analyze                        # Boot time analysis
+systemctl analyze blame                  # Services by start time
+systemctl analyze critical-chain        # Critical startup chain
+journalctl -b                            # Boot messages
+
+## 18. SYSTEM BACKUP & RECOVERY
+rsync -av /source/ /destination/         # Sync directories
+tar -czf backup.tar.gz /path/to/backup   # Create compressed backup
+dd if=/dev/sda of=/dev/sdb bs=4M         # Clone disk
+mount -o remount,ro /                    # Remount root as read-only
+fsck /dev/sda1                           # Filesystem check
+sudo fsck -y /dev/sda1                   # Auto-fix filesystem errors
+
+## 19. PACKAGE SYSTEM INTEGRATION
+dpkg-reconfigure package_name            # Reconfigure package
+sudo update-alternatives --config editor # Configure default editor
+sudo update-alternatives --install /usr/bin/java java /path/to/java 1
+locale                                   # Current locale settings
+sudo dpkg-reconfigure locales           # Reconfigure locales
+sudo dpkg-reconfigure tzdata            # Reconfigure timezone
+
+## 20. SYSTEM SECURITY MONITORING
+last                                     # Recent logins
+lastb                                    # Failed login attempts
+who                                      # Current users
+w                                        # Detailed user activity
+ps aux | grep suspicious_process         # Find suspicious processes
+netstat -tlnp                           # Network connections
+ss -tlnp                                # Modern netstat alternative
+sudo lsof -i                            # Network files
+find /tmp -type f -atime +7             # Find old temp files
+
+## USEFUL SYSTEM COMMAND COMBINATIONS:
+# Top 10 CPU-consuming processes:
+ps aux --sort=-%cpu | head -11
+
+# Top 10 memory-consuming processes:
+ps aux --sort=-%mem | head -11
+
+# Disk usage by directory:
+du -h --max-depth=1 | sort -hr
+
+# Monitor log files:
+tail -f /var/log/syslog /var/log/auth.log
+
+# Find large files:
+find / -type f -size +100M 2>/dev/null
+
+# System resource summary:
+echo "CPU:"; lscpu | grep "CPU(s):"; echo "Memory:"; free -h; echo "Disk:"; df -h

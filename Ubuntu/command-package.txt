@@ -1,0 +1,207 @@
+# UBUNTU PACKAGE MANAGEMENT - COMPLETE GUIDE
+
+## 1. APT (Advanced Package Tool)
+sudo apt update                          # Cập nhật package list
+sudo apt upgrade                         # Upgrade tất cả packages
+sudo apt full-upgrade                    # Full upgrade (có thể xóa packages)
+sudo apt install package_name           # Cài đặt package
+sudo apt install package1 package2      # Cài đặt nhiều packages
+sudo apt install -y package_name        # Cài đặt không hỏi xác nhận
+sudo apt remove package_name            # Gỡ bỏ package (giữ config files)
+sudo apt purge package_name             # Gỡ bỏ package và config files
+sudo apt autoremove                     # Xóa packages không cần thiết
+sudo apt autoclean                      # Xóa cached packages cũ
+sudo apt clean                          # Xóa tất cả cached packages
+apt search keyword                       # Tìm kiếm packages
+apt show package_name                    # Thông tin chi tiết package
+apt list --installed                    # Liệt kê packages đã cài
+apt list --upgradable                   # Liệt kê packages có thể upgrade
+apt depends package_name                # Dependencies của package
+apt rdepends package_name               # Packages phụ thuộc vào package này
+
+## 2. APT-GET (Legacy)
+sudo apt-get update                     # Cập nhật package list
+sudo apt-get upgrade                    # Upgrade packages
+sudo apt-get dist-upgrade               # Distribution upgrade
+sudo apt-get install package_name      # Cài đặt package
+sudo apt-get remove package_name       # Gỡ bỏ package
+sudo apt-get purge package_name        # Gỡ bỏ package và config
+sudo apt-get autoremove                # Xóa packages không cần thiết
+sudo apt-get autoclean                 # Xóa cached packages cũ
+sudo apt-get clean                     # Xóa tất cả cached packages
+sudo apt-get build-dep package_name    # Cài build dependencies
+sudo apt-get source package_name       # Download source code
+sudo apt-get check                     # Kiểm tra broken dependencies
+
+## 3. APT-CACHE
+apt-cache search keyword                # Tìm kiếm packages
+apt-cache show package_name            # Thông tin package
+apt-cache depends package_name         # Dependencies
+apt-cache rdepends package_name        # Reverse dependencies
+apt-cache policy package_name          # Installation candidate info
+apt-cache pkgnames                     # Liệt kê tất cả package names
+apt-cache stats                        # Cache statistics
+apt-cache showpkg package_name         # Show package relationships
+
+## 4. DPKG (Debian Package Manager)
+dpkg -l                                # Liệt kê tất cả packages đã cài
+dpkg -l | grep package_name            # Tìm package cụ thể
+dpkg -i package.deb                    # Cài đặt .deb file
+sudo dpkg -r package_name              # Remove package
+sudo dpkg -P package_name              # Purge package
+dpkg -s package_name                   # Status của package
+dpkg -L package_name                   # List files trong package
+dpkg -S /path/to/file                  # Tìm package chứa file
+dpkg --configure -a                    # Configure tất cả packages
+dpkg --audit                           # Tìm packages bị broken
+dpkg-reconfigure package_name          # Reconfigure package
+dpkg-query -W -f='${Status}' package_name  # Check if package installed
+
+## 5. REPOSITORY MANAGEMENT
+sudo add-apt-repository ppa:user/repo  # Thêm PPA repository
+sudo add-apt-repository -r ppa:user/repo # Xóa PPA repository
+sudo apt-add-repository "deb http://..."  # Thêm repository
+ls /etc/apt/sources.list.d/             # List repository files
+cat /etc/apt/sources.list               # Main sources list
+sudo nano /etc/apt/sources.list         # Edit main sources
+apt-key list                            # List GPG keys
+sudo apt-key add key.gpg                # Add GPG key
+sudo apt-key del KEY_ID                 # Remove GPG key
+wget -qO - https://url/key.gpg | sudo apt-key add -  # Add key from URL
+
+## 6. PACKAGE INFORMATION & HISTORY
+apt list --installed                    # Installed packages
+apt list package_name                   # Check if package available
+apt policy package_name                 # Installation policy
+apt changelog package_name              # Package changelog
+dpkg-query -l                          # Installed packages (dpkg format)
+grep " install " /var/log/apt/history.log  # Installation history
+grep " remove " /var/log/apt/history.log   # Removal history
+cat /var/log/apt/history.log            # Full apt history
+zcat /var/log/apt/history.log.*.gz      # Old compressed logs
+
+## 7. SNAP PACKAGES
+sudo snap install package_name         # Cài đặt snap package
+sudo snap install --classic package    # Install classic snap
+sudo snap remove package_name          # Gỡ bỏ snap package
+snap list                              # List installed snaps
+snap find keyword                      # Tìm snap packages
+snap info package_name                 # Thông tin snap package
+sudo snap refresh                      # Update tất cả snaps
+sudo snap refresh package_name         # Update snap cụ thể
+snap version                           # Snap version
+snap services                          # Snap services
+sudo snap disable package_name         # Disable snap
+sudo snap enable package_name          # Enable snap
+sudo snap revert package_name          # Revert to previous version
+
+## 8. FLATPAK PACKAGES
+sudo apt install flatpak               # Cài đặt Flatpak
+flatpak install flathub app.name       # Cài đặt Flatpak app
+flatpak uninstall app.name             # Gỡ bỏ Flatpak app
+flatpak list                           # List installed Flatpaks
+flatpak search keyword                 # Tìm Flatpak apps
+flatpak info app.name                  # Thông tin Flatpak app
+flatpak update                         # Update tất cả Flatpaks
+flatpak run app.name                   # Chạy Flatpak app
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+## 9. PACKAGE BUILDING & DEVELOPMENT
+sudo apt install build-essential       # Cài build tools cơ bản
+sudo apt build-dep package_name       # Cài build dependencies
+apt source package_name                # Download source
+dpkg-buildpackage -us -uc             # Build package
+debuild -us -uc                       # Alternative build command
+sudo checkinstall                     # Create package from make install
+equivs-build control_file              # Create dummy package
+dh_make --createorig                   # Create debian packaging
+
+## 10. PACKAGE HOLDING & PINNING
+sudo apt-mark hold package_name        # Hold package (ngăn update)
+sudo apt-mark unhold package_name      # Unhold package
+apt-mark showhold                      # Show held packages
+echo "package_name hold" | sudo dpkg --set-selections  # Alternative hold
+echo "package_name install" | sudo dpkg --set-selections  # Alternative unhold
+dpkg --get-selections | grep hold     # Show held packages (dpkg)
+
+## 11. TROUBLESHOOTING
+sudo dpkg --configure -a               # Configure interrupted packages
+sudo apt --fix-broken install          # Fix broken dependencies
+sudo apt-get -f install               # Force fix broken packages
+sudo dpkg --force-depends -i package.deb  # Force install with broken deps
+sudo apt-get autoclean                # Clean package cache
+sudo apt-get clean                    # Clean all cached packages
+sudo rm /var/lib/apt/lists/* && sudo apt update  # Reset package lists
+sudo dpkg --audit                     # Check for broken packages
+
+## 12. ALTERNATIVE PACKAGE MANAGERS
+# AppImage
+chmod +x app.AppImage                  # Make AppImage executable
+./app.AppImage                         # Run AppImage
+# Extract: ./app.AppImage --appimage-extract
+
+# Manual installation
+sudo make install                      # Install from source
+sudo ./configure && make && sudo make install
+sudo checkinstall                     # Create package during make install
+
+## 13. PACKAGE PRIORITIES & VERSIONS
+apt policy                             # Show package priorities
+apt policy package_name                # Show versions and priorities
+sudo apt install package_name=version # Install specific version
+apt-cache madison package_name         # Show available versions
+sudo apt-get install -t release package_name  # Install from specific release
+
+## 14. BACKUPS & PACKAGE LISTS
+dpkg --get-selections > packages.txt   # Backup package list
+sudo dpkg --set-selections < packages.txt  # Restore package selections
+sudo apt-get dselect-upgrade          # Install from selections
+apt-clone clone system.apt-clone       # Backup with apt-clone
+apt-clone restore system.apt-clone     # Restore with apt-clone
+
+## 15. PACKAGE FILES & CONTENT
+dpkg -L package_name                   # List files in package
+dpkg -S filename                       # Find package containing file
+apt-file search filename              # Search files in all packages
+apt-file list package_name            # List files in package (not installed)
+sudo apt-file update                   # Update apt-file database
+
+## 16. USEFUL PACKAGE COMBINATIONS
+# Update system completely:
+sudo apt update && sudo apt full-upgrade
+
+# Install recommended packages:
+sudo apt install --install-recommends package_name
+
+# Install without recommended packages:
+sudo apt install --no-install-recommends package_name
+
+# Download package without installing:
+apt download package_name
+
+# Show package size:
+apt show package_name | grep Size
+
+# List largest installed packages:
+dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
+
+# Remove orphaned packages:
+sudo apt autoremove && sudo apt autoclean
+
+# Check if reboot required after updates:
+cat /var/run/reboot-required
+
+## 17. EMERGENCY FIXES
+# Fix broken apt:
+sudo rm /var/lib/apt/lists/lock
+sudo rm /var/cache/apt/archives/lock
+sudo rm /var/lib/dpkg/lock*
+sudo dpkg --configure -a
+sudo apt update
+
+# Reset apt sources:
+sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
+sudo software-properties-gtk  # Reset through GUI
+
+# Force package removal:
+sudo dpkg --remove --force-remove-reinstreq package_name

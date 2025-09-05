@@ -1,0 +1,509 @@
+# LPIC ADVANCED SHELL SCRIPTING & AUTOMATION - COMPLETE GUIDE
+
+## 1. SHELL SCRIPTING BASICS
+#!/bin/bash                            # Shebang line
+#!/usr/bin/env bash                    # Portable shebang
+
+# Make script executable:
+chmod +x script.sh                     # Make executable
+./script.sh                            # Run script
+bash script.sh                        # Run with bash
+sh script.sh                          # Run with sh
+
+# Script structure:
+#!/bin/bash
+# Script description
+# Author: Your Name
+# Date: 2024-01-01
+
+set -e                                 # Exit on error
+set -u                                 # Exit on undefined variable
+set -x                                 # Debug mode (show commands)
+
+## 2. VARIABLES & PARAMETERS
+# Variable assignment:
+VAR="value"                            # String variable
+NUM=42                                 # Numeric variable
+ARRAY=("item1" "item2" "item3")        # Array
+
+# Variable expansion:
+echo $VAR                              # Simple expansion
+echo ${VAR}                            # Explicit expansion
+echo "${VAR}_suffix"                   # Concatenation
+echo "${VAR:-default}"                 # Default value if empty
+echo "${VAR:=default}"                 # Set default if empty
+echo "${VAR:?error message}"           # Error if empty
+
+# String manipulation:
+echo "${VAR#prefix}"                   # Remove shortest prefix
+echo "${VAR##prefix}"                  # Remove longest prefix
+echo "${VAR%suffix}"                   # Remove shortest suffix
+echo "${VAR%%suffix}"                  # Remove longest suffix
+echo "${VAR/old/new}"                  # Replace first occurrence
+echo "${VAR//old/new}"                 # Replace all occurrences
+echo "${#VAR}"                         # String length
+
+# Command line parameters:
+echo $0                                # Script name
+echo $1 $2 $3                          # First three parameters
+echo $#                                # Number of parameters
+echo $@                                # All parameters as array
+echo $*                                # All parameters as string
+echo $$                                # Process ID
+echo $?                                # Exit status of last command
+
+## 3. INPUT/OUTPUT & REDIRECTION
+read -p "Enter name: " NAME            # Read user input
+read -s -p "Password: " PASS           # Silent input (password)
+read -t 10 -p "Quick answer: " ANSWER  # Timeout after 10 seconds
+read -n 1 -p "Press any key: " KEY     # Read single character
+
+# File redirection:
+command > file                         # Redirect stdout to file
+command >> file                        # Append stdout to file
+command 2> file                        # Redirect stderr to file
+command 2>> file                       # Append stderr to file
+command > file 2>&1                    # Redirect both stdout and stderr
+command &> file                        # Redirect both (bash shortcut)
+command < file                         # Input from file
+command | another_command              # Pipe output to another command
+command | tee file                     # Output to both screen and file
+
+## 4. CONDITIONAL STATEMENTS
+# if-then-else:
+if [ condition ]; then
+    echo "condition is true"
+elif [ other_condition ]; then
+    echo "other condition is true"
+else
+    echo "no condition is true"
+fi
+
+# File tests:
+if [ -f "/path/to/file" ]; then echo "file exists"; fi
+if [ -d "/path/to/dir" ]; then echo "directory exists"; fi
+if [ -r "/path/to/file" ]; then echo "file is readable"; fi
+if [ -w "/path/to/file" ]; then echo "file is writable"; fi
+if [ -x "/path/to/file" ]; then echo "file is executable"; fi
+if [ -s "/path/to/file" ]; then echo "file is not empty"; fi
+
+# String tests:
+if [ "$str1" = "$str2" ]; then echo "strings equal"; fi
+if [ "$str1" != "$str2" ]; then echo "strings not equal"; fi
+if [ -z "$str" ]; then echo "string is empty"; fi
+if [ -n "$str" ]; then echo "string is not empty"; fi
+
+# Numeric tests:
+if [ $num1 -eq $num2 ]; then echo "numbers equal"; fi
+if [ $num1 -ne $num2 ]; then echo "numbers not equal"; fi
+if [ $num1 -gt $num2 ]; then echo "num1 greater than num2"; fi
+if [ $num1 -lt $num2 ]; then echo "num1 less than num2"; fi
+if [ $num1 -ge $num2 ]; then echo "num1 greater or equal"; fi
+if [ $num1 -le $num2 ]; then echo "num1 less or equal"; fi
+
+# Modern test syntax:
+if [[ $str =~ regex ]]; then echo "matches regex"; fi
+if [[ $str == pattern* ]]; then echo "matches pattern"; fi
+
+# Case statement:
+case $variable in
+    pattern1)
+        echo "matches pattern1"
+        ;;
+    pattern2|pattern3)
+        echo "matches pattern2 or pattern3"
+        ;;
+    *)
+        echo "default case"
+        ;;
+esac
+
+## 5. LOOPS
+# for loop:
+for i in 1 2 3 4 5; do
+    echo "Number: $i"
+done
+
+for file in *.txt; do
+    echo "Processing $file"
+done
+
+for i in {1..10}; do
+    echo "Count: $i"
+done
+
+for ((i=1; i<=10; i++)); do
+    echo "Counter: $i"
+done
+
+# while loop:
+counter=1
+while [ $counter -le 10 ]; do
+    echo "Counter: $counter"
+    ((counter++))
+done
+
+# until loop:
+counter=1
+until [ $counter -gt 10 ]; do
+    echo "Counter: $counter"
+    ((counter++))
+done
+
+# Loop control:
+for i in {1..10}; do
+    if [ $i -eq 5 ]; then
+        continue                       # Skip iteration
+    fi
+    if [ $i -eq 8 ]; then
+        break                          # Exit loop
+    fi
+    echo $i
+done
+
+## 6. FUNCTIONS
+# Function definition:
+function myfunction() {
+    echo "Hello from function"
+    echo "Parameter 1: $1"
+    echo "Parameter 2: $2"
+    return 0
+}
+
+# Alternative syntax:
+myfunction() {
+    local local_var="local value"      # Local variable
+    echo "Function called with $# parameters"
+    echo "All parameters: $@"
+}
+
+# Function call:
+myfunction arg1 arg2                   # Call with arguments
+result=$(myfunction arg1 arg2)         # Capture output
+myfunction arg1 arg2; echo $?          # Check return code
+
+## 7. ARRAYS
+# Array creation:
+arr=("apple" "banana" "cherry")        # Indexed array
+declare -A assoc_arr                   # Associative array
+assoc_arr["key1"]="value1"
+assoc_arr["key2"]="value2"
+
+# Array operations:
+echo ${arr[0]}                         # First element
+echo ${arr[@]}                         # All elements
+echo ${#arr[@]}                        # Array length
+echo ${!assoc_arr[@]}                  # All keys (associative)
+
+# Array manipulation:
+arr+=("date")                          # Append element
+unset arr[1]                           # Remove element
+arr[1]="new_value"                     # Update element
+
+# Loop through array:
+for item in "${arr[@]}"; do
+    echo "Item: $item"
+done
+
+for key in "${!assoc_arr[@]}"; do
+    echo "Key: $key, Value: ${assoc_arr[$key]}"
+done
+
+## 8. REGULAR EXPRESSIONS
+# Basic regex with grep:
+echo "hello123" | grep -E "[0-9]+"     # Match numbers
+echo "test@email.com" | grep -E "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+
+# Regex in bash:
+string="hello123world"
+if [[ $string =~ [0-9]+ ]]; then
+    echo "Contains numbers: ${BASH_REMATCH[0]}"
+fi
+
+# Common regex patterns:
+# ^          - Start of line
+# $          - End of line
+# .          - Any character
+# *          - Zero or more of previous
+# +          - One or more of previous
+# ?          - Zero or one of previous
+# [abc]      - Character class
+# [^abc]     - Negated character class
+# [a-z]      - Character range
+# \d         - Digit (in some contexts)
+# \w         - Word character
+# \s         - Whitespace
+
+## 9. TEXT PROCESSING
+# sed (stream editor):
+sed 's/old/new/' file                  # Replace first occurrence per line
+sed 's/old/new/g' file                 # Replace all occurrences
+sed '/pattern/d' file                  # Delete lines matching pattern
+sed -n '5,10p' file                    # Print lines 5-10
+sed -i 's/old/new/g' file              # In-place editing
+
+# awk (pattern processor):
+awk '{print $1}' file                  # Print first field
+awk -F: '{print $1,$3}' /etc/passwd    # Use : as field separator
+awk '/pattern/ {print}' file           # Print lines matching pattern
+awk 'NR==5' file                       # Print 5th line
+awk '{sum+=$1} END {print sum}' file   # Sum first column
+
+# cut (extract columns):
+cut -d: -f1 /etc/passwd                # Extract first field (: delimiter)
+cut -c1-5 file                         # Extract characters 1-5
+cut -f2,4 file                         # Extract fields 2 and 4
+
+# sort and uniq:
+sort file                              # Sort lines
+sort -n file                           # Numeric sort
+sort -r file                           # Reverse sort
+sort -k2 file                          # Sort by 2nd field
+uniq file                              # Remove duplicate lines
+sort file | uniq -c                    # Count occurrences
+
+## 10. PROCESS & JOB CONTROL
+# Background jobs:
+command &                              # Run in background
+jobs                                   # List active jobs
+bg %1                                  # Send job 1 to background
+fg %1                                  # Bring job 1 to foreground
+kill %1                                # Kill job 1
+disown %1                              # Remove job from shell's job table
+
+# Process substitution:
+diff <(command1) <(command2)           # Compare command outputs
+while read line; do
+    echo "Processing: $line"
+done < <(command)                      # Process command output
+
+# Command grouping:
+{ command1; command2; }                # Group commands (current shell)
+(command1; command2)                   # Group commands (subshell)
+
+## 11. ERROR HANDLING & DEBUGGING
+# Exit codes:
+exit 0                                 # Success
+exit 1                                 # General error
+exit 2                                 # Misuse of shell command
+exit 126                               # Command invoked cannot execute
+exit 127                               # Command not found
+
+# Error handling:
+set -e                                 # Exit on error
+set -u                                 # Exit on undefined variable
+set -o pipefail                        # Exit if any command in pipeline fails
+
+# Trap signals:
+trap 'echo "Script interrupted"; exit 1' INT TERM
+trap 'cleanup_function' EXIT           # Run on script exit
+
+cleanup_function() {
+    echo "Cleaning up..."
+    rm -f /tmp/tempfile
+}
+
+# Debug output:
+set -x                                 # Show commands as they execute
+set +x                                 # Disable debug output
+
+# Conditional execution:
+command && echo "success" || echo "failure"
+command1 && command2                   # Run command2 only if command1 succeeds
+command1 || command2                   # Run command2 only if command1 fails
+
+## 12. FILE OPERATIONS IN SCRIPTS
+# Check file existence:
+check_file() {
+    if [ ! -f "$1" ]; then
+        echo "Error: File $1 not found"
+        exit 1
+    fi
+}
+
+# Create backup:
+backup_file() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        cp "$file" "$file.backup.$(date +%Y%m%d_%H%M%S)"
+        echo "Backup created for $file"
+    fi
+}
+
+# Read file line by line:
+while IFS= read -r line; do
+    echo "Line: $line"
+done < file.txt
+
+# Write to file:
+cat > output.txt <<EOF
+This is line 1
+This is line 2
+Variable value: $VAR
+EOF
+
+## 13. DATE & TIME OPERATIONS
+current_date=$(date +%Y-%m-%d)         # Current date
+current_time=$(date +%H:%M:%S)         # Current time
+timestamp=$(date +%Y%m%d_%H%M%S)       # Timestamp
+epoch=$(date +%s)                      # Unix timestamp
+formatted=$(date '+%A, %B %d, %Y')     # Formatted date
+
+# Date arithmetic:
+tomorrow=$(date -d 'tomorrow' +%Y-%m-%d)
+last_week=$(date -d '1 week ago' +%Y-%m-%d)
+specific_date=$(date -d '2024-01-01' +%A)
+
+## 14. MATHEMATICAL OPERATIONS
+# Arithmetic expansion:
+result=$((5 + 3))                      # Addition
+result=$((10 * 2))                     # Multiplication
+result=$((20 / 4))                     # Division
+result=$((17 % 5))                     # Modulo
+
+# Increment/decrement:
+((counter++))                          # Post-increment
+((++counter))                          # Pre-increment
+((counter--))                          # Post-decrement
+((--counter))                          # Pre-decrement
+
+# bc for floating point:
+result=$(echo "scale=2; 10/3" | bc)    # 3.33
+result=$(bc -l <<< "sqrt(16)")         # 4.00000000000000000000
+
+## 15. CRON & SCHEDULING
+# Cron format: minute hour day month day-of-week command
+# Examples:
+# 0 2 * * * /path/to/script.sh         # Daily at 2 AM
+# 0 0 * * 0 /path/to/script.sh         # Weekly on Sunday
+# 0 0 1 * * /path/to/script.sh         # Monthly on 1st
+# */15 * * * * /path/to/script.sh      # Every 15 minutes
+
+# Edit crontab:
+crontab -e                             # Edit current user's crontab
+crontab -l                             # List current user's crontab
+sudo crontab -u username -e            # Edit another user's crontab
+
+# System cron directories:
+ls /etc/cron.d/                        # System cron jobs
+ls /etc/cron.daily/                    # Daily jobs
+ls /etc/cron.hourly/                   # Hourly jobs
+ls /etc/cron.weekly/                   # Weekly jobs
+ls /etc/cron.monthly/                  # Monthly jobs
+
+# at command (one-time scheduling):
+at 15:30                               # Schedule for 3:30 PM
+at now + 1 hour                        # Schedule for 1 hour from now
+at midnight                            # Schedule for midnight
+atq                                    # List scheduled jobs
+atrm job_number                        # Remove scheduled job
+
+## 16. SYSTEM INFORMATION SCRIPTS
+#!/bin/bash
+# System information script
+
+echo "=== System Information ==="
+echo "Hostname: $(hostname)"
+echo "Uptime: $(uptime -p)"
+echo "Load Average: $(uptime | awk -F'load average:' '{print $2}')"
+echo "Memory Usage: $(free -h | awk 'NR==2{printf "%s/%s (%.2f%%)\n", $3,$2,$3*100/$2}')"
+echo "Disk Usage: $(df -h / | awk 'NR==2{printf "%s/%s (%s)\n", $3,$2,$5}')"
+echo "Current Users: $(who | wc -l)"
+
+## 17. LOG PROCESSING SCRIPTS
+#!/bin/bash
+# Log analysis script
+
+LOGFILE="/var/log/apache2/access.log"
+DATE=$(date +%d/%b/%Y)
+
+echo "=== Log Analysis for $DATE ==="
+echo "Total requests: $(grep "$DATE" "$LOGFILE" | wc -l)"
+echo "Unique IPs: $(grep "$DATE" "$LOGFILE" | awk '{print $1}' | sort | uniq | wc -l)"
+echo "404 errors: $(grep "$DATE" "$LOGFILE" | grep ' 404 ' | wc -l)"
+echo "Top 5 IPs:"
+grep "$DATE" "$LOGFILE" | awk '{print $1}' | sort | uniq -c | sort -rn | head -5
+
+## 18. BACKUP SCRIPTS
+#!/bin/bash
+# Backup script with rotation
+
+BACKUP_DIR="/backup"
+SOURCE_DIR="/home/user/documents"
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_FILE="backup_$DATE.tar.gz"
+RETENTION_DAYS=7
+
+# Create backup
+tar -czf "$BACKUP_DIR/$BACKUP_FILE" "$SOURCE_DIR"
+echo "Backup created: $BACKUP_FILE"
+
+# Remove old backups
+find "$BACKUP_DIR" -name "backup_*.tar.gz" -mtime +$RETENTION_DAYS -delete
+echo "Old backups removed (older than $RETENTION_DAYS days)"
+
+## 19. MONITORING SCRIPTS
+#!/bin/bash
+# System monitoring script
+
+THRESHOLD_CPU=80
+THRESHOLD_MEMORY=80
+THRESHOLD_DISK=90
+
+# Check CPU usage
+CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)
+if (( $(echo "$CPU_USAGE > $THRESHOLD_CPU" | bc -l) )); then
+    echo "WARNING: CPU usage is ${CPU_USAGE}%"
+fi
+
+# Check memory usage
+MEMORY_USAGE=$(free | grep Mem | awk '{printf "%.0f", $3/$2 * 100.0}')
+if [ "$MEMORY_USAGE" -gt "$THRESHOLD_MEMORY" ]; then
+    echo "WARNING: Memory usage is ${MEMORY_USAGE}%"
+fi
+
+# Check disk usage
+DISK_USAGE=$(df / | grep -vE '^Filesystem' | awk '{print $5}' | sed 's/%//g')
+if [ "$DISK_USAGE" -gt "$THRESHOLD_DISK" ]; then
+    echo "WARNING: Disk usage is ${DISK_USAGE}%"
+fi
+
+## 20. BEST PRACTICES & SECURITY
+# Script security:
+umask 077                              # Secure default permissions
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Input validation:
+validate_input() {
+    local input="$1"
+    if [[ ! "$input" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "Error: Invalid input format"
+        exit 1
+    fi
+}
+
+# Use quotes to prevent word splitting:
+command "$variable"                    # Correct
+command $variable                      # Potentially dangerous
+
+# Check command existence:
+if ! command -v required_command &> /dev/null; then
+    echo "Error: required_command is not installed"
+    exit 1
+fi
+
+# Use shellcheck for script validation:
+# sudo apt install shellcheck
+# shellcheck script.sh
+
+## LPIC SCRIPTING EXAM TIPS:
+1. Always include proper shebang (#!/bin/bash)
+2. Use set -e for error handling
+3. Quote variables to prevent word splitting
+4. Use [[ ]] for modern test conditions
+5. Implement proper error handling and cleanup
+6. Use functions for code reusability
+7. Add comments for complex logic
+8. Test scripts thoroughly before deployment
+9. Use shellcheck for syntax validation
+10. Follow naming conventions for variables and functions

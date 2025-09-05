@@ -1,0 +1,4 @@
+alias ku=kubectl
+alias dk=docker
+alias mi=minikube
+alias he=helm

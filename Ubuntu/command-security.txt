@@ -1,0 +1,247 @@
+# UBUNTU SECURITY & PERMISSIONS - COMPLETE GUIDE
+
+## 1. FILE PERMISSIONS (chmod)
+chmod 755 file                          # rwxr-xr-x
+chmod 644 file                          # rw-r--r--
+chmod 600 file                          # rw-------
+chmod 777 file                          # rwxrwxrwx (nguy hiểm)
+chmod +x file                           # Thêm execute permission
+chmod -x file                           # Xóa execute permission
+chmod u+r file                          # User thêm read
+chmod g-w file                          # Group xóa write
+chmod o=r file                          # Others chỉ read
+chmod a+x file                          # All thêm execute
+chmod u+rwx,g+rx,o+r file              # Chi tiết permissions
+chmod --reference=ref_file target_file  # Copy permissions từ file khác
+chmod -R 755 directory                  # Recursive cho thư mục
+
+## 2. OWNERSHIP (chown, chgrp)
+sudo chown user file                    # Đổi owner
+sudo chown user:group file              # Đổi owner và group
+sudo chown :group file                  # Chỉ đổi group
+sudo chgrp group file                   # Đổi group
+sudo chown -R user:group directory     # Recursive cho thư mục
+sudo chown --reference=ref_file target # Copy ownership
+
+## 3. ADVANCED PERMISSIONS (ACL)
+sudo apt install acl                    # Cài đặt ACL tools
+getfacl file                            # Xem ACL của file
+setfacl -m u:username:rwx file          # Set ACL cho user
+setfacl -m g:groupname:r file           # Set ACL cho group
+setfacl -x u:username file              # Xóa ACL user
+setfacl -b file                         # Xóa tất cả ACL
+setfacl -R -m u:user:rwx directory     # Recursive ACL
+setfacl -m d:u:user:rwx directory      # Default ACL cho directory
+setfacl -k directory                    # Xóa default ACL
+
+## 4. SPECIAL PERMISSIONS
+chmod u+s file                          # Set SUID bit
+chmod g+s file                          # Set SGID bit  
+chmod +t directory                      # Set sticky bit
+chmod 4755 file                         # SUID + 755
+chmod 2755 directory                    # SGID + 755
+chmod 1755 directory                    # Sticky bit + 755
+find / -perm -4000 2>/dev/null          # Tìm SUID files
+find / -perm -2000 2>/dev/null          # Tìm SGID files
+find / -perm -1000 2>/dev/null          # Tìm sticky bit files
+
+## 5. USER AUTHENTICATION
+sudo passwd username                    # Đổi password user
+passwd                                  # Đổi password hiện tại
+sudo passwd -l username                 # Lock user account
+sudo passwd -u username                 # Unlock user account
+sudo passwd -e username                 # Force password change
+sudo chage -l username                  # Password aging info
+sudo chage -M 90 username               # Max 90 days password
+sudo chage -m 7 username                # Min 7 days between changes
+sudo chage -W 7 username                # Warn 7 days before expire
+
+## 6. SUDO CONFIGURATION
+sudo visudo                             # Edit sudoers safely
+sudo visudo -f /etc/sudoers.d/username  # Create user-specific sudoers
+sudo -l                                 # List sudo privileges
+sudo -u username command                # Run as different user
+sudo su -                               # Switch to root
+sudo -i                                 # Interactive root shell
+sudo -k                                 # Clear sudo timestamp
+sudo -v                                 # Extend sudo timestamp
+
+## 7. SSH SECURITY
+ssh-keygen -t rsa -b 4096               # Generate SSH key pair
+ssh-keygen -t ed25519                   # Generate Ed25519 key
+ssh-copy-id user@host                   # Copy public key to server
+cat ~/.ssh/id_rsa.pub                   # View public key
+chmod 700 ~/.ssh                        # Secure .ssh directory
+chmod 600 ~/.ssh/id_rsa                 # Secure private key
+chmod 644 ~/.ssh/id_rsa.pub             # Public key permissions
+chmod 600 ~/.ssh/authorized_keys        # Authorized keys permissions
+ssh-agent bash                          # Start SSH agent
+ssh-add ~/.ssh/id_rsa                   # Add key to agent
+ssh-add -l                              # List loaded keys
+
+## 8. SSH CONFIGURATION
+sudo nano /etc/ssh/sshd_config          # SSH server config
+# Thay đổi port: Port 2222
+# Disable root login: PermitRootLogin no
+# Key-only auth: PasswordAuthentication no
+sudo systemctl restart ssh              # Restart SSH service
+sudo ufw allow 2222/tcp                 # Allow new SSH port
+ssh -p 2222 user@host                   # Connect to custom port
+
+## 9. FIREWALL (UFW)
+sudo ufw status                         # Firewall status
+sudo ufw enable                         # Enable firewall
+sudo ufw disable                        # Disable firewall
+sudo ufw allow 22                       # Allow SSH
+sudo ufw allow 80/tcp                   # Allow HTTP
+sudo ufw allow 443/tcp                  # Allow HTTPS
+sudo ufw allow from 192.168.1.0/24     # Allow from subnet
+sudo ufw deny 23                        # Deny Telnet
+sudo ufw delete allow 80                # Delete rule
+sudo ufw reset                          # Reset all rules
+sudo ufw logging on                     # Enable logging
+sudo ufw show added                     # Show rules to be added
+
+## 10. IPTABLES (Advanced Firewall)
+sudo iptables -L                        # List rules
+sudo iptables -F                        # Flush all rules
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT    # Allow SSH
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT    # Allow HTTP
+sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo iptables -A INPUT -j DROP          # Drop all other traffic
+sudo iptables-save > /etc/iptables.rules  # Save rules
+sudo iptables-restore < /etc/iptables.rules  # Restore rules
+sudo netfilter-persistent save          # Persistent rules (if installed)
+
+## 11. PROCESS SECURITY
+ps aux | grep suspicious_process        # Find suspicious processes
+lsof -i                                 # List network connections
+netstat -tlnp                           # Network listening processes
+ss -tlnp                                # Modern netstat alternative
+pstree                                  # Process tree
+kill -9 PID                             # Force kill process
+killall process_name                    # Kill all instances
+sudo fuser -k /path/to/file             # Kill processes using file
+
+## 12. FILE INTEGRITY & MONITORING
+find /etc -type f -mtime -1             # Files modified in last day
+find /var/log -name "*.log" -mtime -7   # Log files from last week
+md5sum file                             # Generate MD5 checksum
+sha256sum file                          # Generate SHA256 checksum
+md5sum file > file.md5                  # Save checksum
+md5sum -c file.md5                      # Verify checksum
+sudo apt install aide                   # Install AIDE (intrusion detection)
+sudo aideinit                           # Initialize AIDE database
+
+## 13. LOG MONITORING
+sudo tail -f /var/log/auth.log          # Authentication logs
+sudo tail -f /var/log/syslog            # System logs
+sudo grep "Failed password" /var/log/auth.log  # Failed login attempts
+sudo grep "sudo:" /var/log/auth.log     # Sudo usage
+last                                    # Recent logins
+lastb                                   # Failed login attempts
+who                                     # Currently logged in users
+w                                       # Detailed user activity
+
+## 14. DISK ENCRYPTION
+sudo cryptsetup luksFormat /dev/sdX     # Format disk with LUKS
+sudo cryptsetup luksOpen /dev/sdX mydisk # Open encrypted disk
+sudo mkfs.ext4 /dev/mapper/mydisk       # Create filesystem
+sudo mount /dev/mapper/mydisk /mnt      # Mount encrypted disk
+sudo cryptsetup luksClose mydisk        # Close encrypted disk
+encfs source_dir encrypted_dir          # EncFS folder encryption
+
+## 15. FILE ENCRYPTION
+gpg --gen-key                           # Generate GPG key pair
+gpg --list-keys                         # List public keys
+gpg --list-secret-keys                  # List private keys
+gpg --encrypt -r recipient file        # Encrypt file
+gpg --decrypt file.gpg > file           # Decrypt file
+gpg --sign file                         # Sign file
+gpg --verify file.sig                   # Verify signature
+openssl enc -aes-256-cbc -in file -out file.enc  # Encrypt with OpenSSL
+openssl enc -d -aes-256-cbc -in file.enc -out file  # Decrypt
+
+## 16. NETWORK SECURITY
+sudo netstat -tlnp | grep :22           # Check SSH connections
+sudo ss -tlnp sport = :22               # Check SSH with ss
+nmap localhost                          # Port scan localhost
+sudo tcpdump -i eth0                    # Network packet capture
+sudo wireshark                          # GUI network analyzer
+sudo fail2ban-client status             # Fail2ban status (if installed)
+sudo fail2ban-client status ssh        # SSH jail status
+
+## 17. SYSTEM HARDENING
+# Disable unused services:
+sudo systemctl disable service_name
+sudo systemctl stop service_name
+
+# Remove unnecessary packages:
+sudo apt autoremove
+sudo apt autoclean
+
+# Update system:
+sudo apt update && sudo apt upgrade
+
+# Check for rootkits:
+sudo apt install rkhunter chkrootkit
+sudo rkhunter --check
+sudo chkrootkit
+
+## 18. SELINUX/APPARMOR
+# AppArmor (Ubuntu default):
+sudo apparmor_status                    # AppArmor status
+sudo aa-status                          # Detailed status
+sudo aa-complain /path/to/program       # Set complain mode
+sudo aa-enforce /path/to/program        # Set enforce mode
+sudo aa-disable /path/to/program        # Disable profile
+ls /etc/apparmor.d/                     # AppArmor profiles
+
+## 19. CERTIFICATE MANAGEMENT
+openssl req -newkey rsa:2048 -nodes -keyout private.key -x509 -days 365 -out certificate.crt
+openssl x509 -text -noout -in cert.crt  # View certificate
+openssl x509 -enddate -noout -in cert.crt  # Check expiry date
+openssl s_client -connect host:443      # Test SSL connection
+update-ca-certificates                  # Update CA certificates
+sudo cp cert.crt /usr/local/share/ca-certificates/
+sudo update-ca-certificates            # Add custom CA
+
+## 20. VULNERABILITY SCANNING
+sudo apt install lynis                  # Install Lynis security scanner
+sudo lynis audit system                 # System security audit
+sudo apt install nmap                   # Install Nmap
+nmap -sV localhost                      # Service version detection
+nmap -O localhost                       # OS detection
+sudo apt install nikto                  # Web vulnerability scanner
+nikto -h http://localhost               # Scan web server
+
+## 21. BACKUP SECURITY
+# Encrypt backups:
+tar -czf - /home/user | gpg --encrypt -r recipient > backup.tar.gz.gpg
+gpg --decrypt backup.tar.gz.gpg | tar -xzf -
+
+# Secure backup script permissions:
+chmod 700 backup_script.sh
+chown root:root backup_script.sh
+
+## SECURITY BEST PRACTICES:
+
+# Regular security updates:
+sudo apt update && sudo apt upgrade
+sudo unattended-upgrades
+
+# Monitor failed logins:
+sudo grep "Failed password" /var/log/auth.log | tail -20
+
+# Check listening services:
+sudo netstat -tlnp
+
+# Verify file permissions on sensitive files:
+ls -la /etc/passwd /etc/shadow /etc/sudoers
+
+# Check for suspicious SUID files:
+find / -perm -4000 -type f 2>/dev/null | xargs ls -la
+
+# Monitor disk usage:
+df -h
+du -sh /var/log/*

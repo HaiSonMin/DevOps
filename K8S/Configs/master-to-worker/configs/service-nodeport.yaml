@@ -1,0 +1,16 @@
+# Chỏ đến toàn bộ có label app: bodevops-deployment trên tất cả các node
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: bodevops-deployment
+  name: bodevops-service-nodeport
+  namespace: bodevops
+spec:
+  type: NodePort
+  selector:
+    app: bodevops-deployment
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080

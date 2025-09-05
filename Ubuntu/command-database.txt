@@ -1,0 +1,266 @@
+# UBUNTU DATABASE OPERATIONS - COMPLETE GUIDE
+
+## 1. MYSQL/MARIADB INSTALLATION & SETUP
+sudo apt update                         # Update package list
+sudo apt install mysql-server           # Install MySQL
+sudo apt install mariadb-server         # Install MariaDB (alternative)
+sudo mysql_secure_installation         # Secure MySQL installation
+sudo systemctl start mysql             # Start MySQL service
+sudo systemctl enable mysql            # Enable MySQL at boot
+sudo systemctl status mysql            # Check MySQL status
+sudo systemctl stop mysql              # Stop MySQL service
+sudo systemctl restart mysql           # Restart MySQL service
+
+## 2. MYSQL CONNECTION & BASIC OPERATIONS
+sudo mysql                              # Connect as root (no password initially)
+mysql -u username -p                    # Connect with username and password
+mysql -h hostname -u username -p        # Connect to remote server
+mysql -u username -p database_name     # Connect to specific database
+mysqladmin -u root -p status           # Check MySQL status
+mysqladmin -u root -p processlist      # Show running processes
+mysqladmin -u root -p shutdown         # Shutdown MySQL server
+
+## 3. MYSQL DATABASE OPERATIONS
+# Inside MySQL shell:
+SHOW DATABASES;                         # List all databases
+CREATE DATABASE database_name;          # Create database
+USE database_name;                      # Select database
+DROP DATABASE database_name;            # Delete database
+SHOW TABLES;                            # List tables in current database
+DESCRIBE table_name;                    # Show table structure
+SHOW CREATE TABLE table_name;           # Show CREATE TABLE statement
+
+## 4. MYSQL USER MANAGEMENT
+# Create user and grant privileges:
+CREATE USER 'username'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON database_name.* TO 'username'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON database_name.* TO 'username'@'localhost';
+GRANT ALL PRIVILEGES ON *.* TO 'username'@'%' IDENTIFIED BY 'password';
+FLUSH PRIVILEGES;                       # Reload privileges
+SHOW GRANTS FOR 'username'@'localhost'; # Show user privileges
+DROP USER 'username'@'localhost';       # Delete user
+REVOKE ALL PRIVILEGES ON database_name.* FROM 'username'@'localhost';
+
+## 5. MYSQL BACKUP & RESTORE
+mysqldump -u username -p database_name > backup.sql  # Backup database
+mysqldump -u username -p --all-databases > all_backup.sql  # Backup all databases
+mysqldump -u username -p database_name table_name > table_backup.sql  # Backup table
+mysqldump -u username -p --single-transaction database_name > backup.sql  # InnoDB backup
+mysql -u username -p database_name < backup.sql  # Restore database
+mysql -u username -p < all_backup.sql   # Restore all databases
+# Compressed backup:
+mysqldump -u username -p database_name | gzip > backup.sql.gz
+gunzip < backup.sql.gz | mysql -u username -p database_name
+
+## 6. POSTGRESQL INSTALLATION & SETUP
+sudo apt install postgresql postgresql-contrib  # Install PostgreSQL
+sudo systemctl start postgresql         # Start PostgreSQL
+sudo systemctl enable postgresql        # Enable at boot
+sudo systemctl status postgresql        # Check status
+sudo -u postgres psql                   # Connect as postgres user
+sudo -u postgres createuser --interactive  # Create user interactively
+sudo -u postgres createdb database_name # Create database
+
+## 7. POSTGRESQL CONNECTION & OPERATIONS
+sudo -u postgres psql                   # Connect as postgres
+psql -U username -d database_name       # Connect with specific user/db
+psql -h hostname -U username -d database_name  # Remote connection
+# Inside PostgreSQL shell:
+\l                                      # List databases
+\c database_name                        # Connect to database
+\dt                                     # List tables
+\d table_name                           # Describe table
+\du                                     # List users
+\q                                      # Quit
+
+## 8. POSTGRESQL DATABASE OPERATIONS
+CREATE DATABASE database_name;          # Create database
+DROP DATABASE database_name;            # Delete database
+CREATE TABLE table_name (id SERIAL PRIMARY KEY, name VARCHAR(50));
+INSERT INTO table_name (name) VALUES ('example');
+SELECT * FROM table_name;               # Query data
+UPDATE table_name SET name='new_name' WHERE id=1;
+DELETE FROM table_name WHERE id=1;
+
+## 9. POSTGRESQL USER MANAGEMENT
+CREATE USER username WITH PASSWORD 'password';  # Create user
+ALTER USER username WITH SUPERUSER;     # Grant superuser
+GRANT ALL PRIVILEGES ON DATABASE database_name TO username;
+GRANT SELECT, INSERT, UPDATE, DELETE ON table_name TO username;
+ALTER USER username WITH PASSWORD 'new_password';  # Change password
+DROP USER username;                     # Delete user
+
+## 10. POSTGRESQL BACKUP & RESTORE
+pg_dump database_name > backup.sql      # Backup database
+pg_dump -U username -h hostname database_name > backup.sql
+pg_dumpall > all_backup.sql             # Backup all databases
+psql database_name < backup.sql         # Restore database
+psql -U username -h hostname database_name < backup.sql
+# Compressed backup:
+pg_dump database_name | gzip > backup.sql.gz
+gunzip -c backup.sql.gz | psql database_name
+
+## 11. MONGODB INSTALLATION & SETUP
+# Install MongoDB (Ubuntu 20.04+):
+wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+sudo apt update
+sudo apt install mongodb-org
+sudo systemctl start mongod
+sudo systemctl enable mongod
+sudo systemctl status mongod
+
+## 12. MONGODB BASIC OPERATIONS
+mongo                                   # Connect to MongoDB shell
+mongosh                                 # Modern MongoDB shell
+# Inside MongoDB shell:
+show dbs                                # List databases
+use database_name                       # Switch to database
+show collections                        # List collections
+db.collection_name.find()              # Query all documents
+db.collection_name.insertOne({name: "example"})  # Insert document
+db.collection_name.updateOne({name: "example"}, {$set: {name: "updated"}})
+db.collection_name.deleteOne({name: "updated"})
+exit                                    # Exit shell
+
+## 13. MONGODB BACKUP & RESTORE
+mongodump --db database_name --out /backup/location  # Backup database
+mongodump --out /backup/location        # Backup all databases
+mongorestore --db database_name /backup/location/database_name  # Restore
+mongorestore /backup/location           # Restore all databases
+# Compressed backup:
+mongodump --gzip --archive=backup.gz --db database_name
+mongorestore --gzip --archive=backup.gz
+
+## 14. REDIS INSTALLATION & SETUP
+sudo apt install redis-server           # Install Redis
+sudo systemctl start redis-server      # Start Redis
+sudo systemctl enable redis-server     # Enable at boot
+sudo systemctl status redis-server     # Check status
+redis-cli                              # Connect to Redis CLI
+redis-cli ping                         # Test connection (should return PONG)
+
+## 15. REDIS BASIC OPERATIONS
+# Inside Redis CLI:
+SET key "value"                         # Set key-value
+GET key                                 # Get value by key
+DEL key                                 # Delete key
+KEYS *                                  # List all keys
+FLUSHDB                                 # Clear current database
+FLUSHALL                                # Clear all databases
+INFO                                    # Server information
+SAVE                                    # Force save to disk
+CONFIG GET save                         # Get save configuration
+
+## 16. DATABASE MONITORING & PERFORMANCE
+# MySQL monitoring:
+SHOW PROCESSLIST;                       # Show running queries
+SHOW STATUS;                            # Show server status
+SHOW VARIABLES;                         # Show system variables
+SHOW ENGINE INNODB STATUS;              # InnoDB status
+EXPLAIN SELECT * FROM table_name;       # Query execution plan
+mysqladmin -u root -p status           # Server status via command line
+mysqladmin -u root -p processlist      # Process list via command line
+
+# PostgreSQL monitoring:
+SELECT * FROM pg_stat_activity;         # Active connections
+SELECT * FROM pg_stat_database;         # Database statistics
+EXPLAIN ANALYZE SELECT * FROM table_name;  # Query execution plan
+\x                                      # Toggle extended display
+
+# MongoDB monitoring:
+db.runCommand({serverStatus: 1})        # Server status
+db.stats()                              # Database statistics
+db.collection_name.stats()              # Collection statistics
+
+## 17. DATABASE CONFIGURATION
+# MySQL configuration:
+sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf  # Main config file
+sudo mysql -e "SHOW VARIABLES LIKE 'max_connections';"  # Check settings
+
+# PostgreSQL configuration:
+sudo nano /etc/postgresql/*/main/postgresql.conf  # Main config
+sudo nano /etc/postgresql/*/main/pg_hba.conf     # Authentication config
+
+# MongoDB configuration:
+sudo nano /etc/mongod.conf              # MongoDB config
+
+## 18. DATABASE LOGS
+# MySQL logs:
+sudo tail -f /var/log/mysql/error.log   # Error log
+sudo tail -f /var/log/mysql/mysql.log   # General query log
+
+# PostgreSQL logs:
+sudo tail -f /var/log/postgresql/postgresql-*-main.log
+
+# MongoDB logs:
+sudo tail -f /var/log/mongodb/mongod.log
+
+## 19. DATABASE SECURITY
+# MySQL security:
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'strong_password';
+DELETE FROM mysql.user WHERE User='';   # Remove anonymous users
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1');
+DROP DATABASE test;                     # Remove test database
+FLUSH PRIVILEGES;
+
+# PostgreSQL security:
+sudo nano /etc/postgresql/*/main/pg_hba.conf  # Configure authentication
+# Change 'peer' to 'md5' for password auth
+sudo systemctl restart postgresql
+
+# MongoDB security:
+use admin
+db.createUser({
+  user: "admin",
+  pwd: "password",
+  roles: ["userAdminAnyDatabase", "dbAdminAnyDatabase", "readWriteAnyDatabase"]
+})
+
+## 20. DATABASE AUTOMATION & SCRIPTS
+# Automated MySQL backup script:
+#!/bin/bash
+DATE=$(date +%Y%m%d_%H%M%S)
+mysqldump -u username -p'password' database_name > /backup/db_backup_$DATE.sql
+gzip /backup/db_backup_$DATE.sql
+
+# Automated PostgreSQL backup:
+#!/bin/bash
+DATE=$(date +%Y%m%d_%H%M%S)
+pg_dump database_name > /backup/pg_backup_$DATE.sql
+gzip /backup/pg_backup_$DATE.sql
+
+# Cron job for daily backup at 2 AM:
+# 0 2 * * * /path/to/backup_script.sh
+
+## 21. DATABASE REPLICATION
+# MySQL Master-Slave setup:
+# Master server:
+# server-id = 1
+# log-bin = mysql-bin
+# binlog-do-db = database_name
+CREATE USER 'replica'@'slave_ip' IDENTIFIED BY 'password';
+GRANT REPLICATION SLAVE ON *.* TO 'replica'@'slave_ip';
+
+# PostgreSQL streaming replication requires complex setup
+# MongoDB replica set:
+rs.initiate()                           # Initialize replica set
+rs.add("hostname:port")                 # Add replica member
+rs.status()                             # Check replica set status
+
+## DATABASE TROUBLESHOOTING:
+# Check if database is running:
+sudo systemctl status mysql             # MySQL
+sudo systemctl status postgresql        # PostgreSQL  
+sudo systemctl status mongod            # MongoDB
+
+# Check database logs for errors:
+sudo journalctl -u mysql -f            # MySQL systemd logs
+sudo journalctl -u postgresql -f       # PostgreSQL systemd logs
+sudo journalctl -u mongod -f           # MongoDB systemd logs
+
+# Check disk space:
+df -h                                   # General disk usage
+du -sh /var/lib/mysql                  # MySQL data directory
+du -sh /var/lib/postgresql             # PostgreSQL data directory
+du -sh /var/lib/mongodb                # MongoDB data directory

@@ -1,0 +1,318 @@
+# LPIC BOOT PROCESS & KERNEL MANAGEMENT - COMPLETE GUIDE
+
+## 1. SYSTEM BOOT PROCESS
+# Boot sequence: BIOS/UEFI → Bootloader → Kernel → Init System → Services
+
+# Check boot messages:
+dmesg                                   # Kernel ring buffer messages
+dmesg | head -20                        # First 20 boot messages
+dmesg | tail -20                        # Last 20 messages
+dmesg -w                                # Watch new messages
+dmesg -T                                # Human readable timestamps
+journalctl -b                           # Current boot messages
+journalctl -b -1                        # Previous boot messages
+journalctl -k                           # Kernel messages only
+journalctl --list-boots                 # List all boots
+
+# Boot time analysis:
+systemd-analyze                         # Boot time summary
+systemd-analyze blame                   # Services by startup time
+systemd-analyze critical-chain          # Critical path analysis
+systemd-analyze plot > bootchart.svg    # Create boot chart
+
+## 2. GRUB BOOTLOADER
+# GRUB configuration files:
+cat /etc/default/grub                   # GRUB defaults
+ls /etc/grub.d/                         # GRUB configuration scripts
+cat /boot/grub/grub.cfg                 # Generated GRUB config (DO NOT EDIT)
+
+# Update GRUB configuration:
+sudo update-grub                        # Update GRUB config
+sudo grub-mkconfig -o /boot/grub/grub.cfg  # Alternative update command
+
+# Common GRUB settings in /etc/default/grub:
+# GRUB_TIMEOUT=5                        # Menu timeout
+# GRUB_DEFAULT=0                        # Default boot entry
+# GRUB_CMDLINE_LINUX="quiet splash"     # Kernel parameters
+# GRUB_DISABLE_RECOVERY="true"          # Disable recovery mode
+
+# GRUB installation:
+sudo grub-install /dev/sda              # Install GRUB to disk
+sudo grub-install --target=x86_64-efi --efi-directory=/boot/efi  # UEFI install
+
+# GRUB rescue commands:
+# From GRUB rescue prompt:
+# ls                                    # List partitions
+# ls (hd0,1)/                          # List files on partition
+# set root=(hd0,1)                     # Set root partition
+# linux /vmlinuz root=/dev/sda1        # Load kernel
+# initrd /initrd.img                   # Load initramfs
+# boot                                 # Boot system
+
+## 3. KERNEL MANAGEMENT
+uname -a                                # System information
+uname -r                                # Kernel version
+uname -m                                # Machine architecture
+cat /proc/version                       # Kernel version details
+ls /boot/                               # Boot files including kernels
+
+# Kernel parameters:
+cat /proc/cmdline                       # Current kernel parameters
+cat /etc/default/grub                   # Default kernel parameters
+# Edit GRUB_CMDLINE_LINUX in /etc/default/grub
+# Common parameters:
+# quiet                                 # Reduce boot messages
+# splash                                # Show splash screen
+# acpi=off                             # Disable ACPI
+# nomodeset                            # Disable kernel mode setting
+# single                               # Boot to single user mode
+
+# Kernel information:
+cat /proc/cpuinfo                       # CPU information
+cat /proc/meminfo                       # Memory information
+cat /proc/modules                       # Loaded kernel modules
+cat /proc/filesystems                   # Supported filesystems
+cat /proc/partitions                    # Partition information
+
+## 4. KERNEL MODULES
+lsmod                                   # List loaded modules
+lsmod | grep module_name                # Check specific module
+modinfo module_name                     # Module information
+modinfo -d module_name                  # Module description only
+modinfo -p module_name                  # Module parameters
+
+# Load/unload modules:
+sudo modprobe module_name               # Load module
+sudo modprobe -r module_name            # Remove module
+sudo insmod /path/to/module.ko          # Insert module directly
+sudo rmmod module_name                  # Remove module directly
+sudo depmod                             # Update module dependencies
+
+# Module configuration:
+cat /etc/modules                        # Modules to load at boot
+cat /etc/modprobe.d/*.conf              # Module configuration files
+# Example module configuration:
+# blacklist module_name                 # Prevent module loading
+# alias eth0 e1000                     # Module alias
+# options module_name parameter=value   # Module parameters
+
+## 5. INITRAMFS/INITRD
+# View initramfs contents:
+lsinitramfs /boot/initrd.img-$(uname -r)  # List files in initramfs
+zcat /boot/initrd.img-$(uname -r) | cpio -t  # Alternative listing
+
+# Update initramfs:
+sudo update-initramfs -u                # Update current kernel initramfs
+sudo update-initramfs -u -k $(uname -r) # Update specific kernel
+sudo update-initramfs -c -k $(uname -r) # Create new initramfs
+sudo mkinitramfs -o /boot/initrd.img-custom $(uname -r)  # Manual creation
+
+# Initramfs configuration:
+cat /etc/initramfs-tools/initramfs.conf  # Initramfs configuration
+ls /etc/initramfs-tools/modules         # Modules to include
+ls /etc/initramfs-tools/conf.d/         # Additional configurations
+
+## 6. SYSTEMD INIT SYSTEM
+systemctl get-default                   # Current default target
+sudo systemctl set-default multi-user.target  # Set default target
+sudo systemctl isolate rescue.target    # Switch to rescue mode
+sudo systemctl isolate multi-user.target # Switch to multi-user mode
+
+# Systemd targets (runlevels):
+# poweroff.target     (runlevel 0) - Shutdown
+# rescue.target       (runlevel 1) - Single user mode
+# multi-user.target   (runlevel 3) - Multi-user without GUI
+# graphical.target    (runlevel 5) - Multi-user with GUI
+# reboot.target       (runlevel 6) - Reboot
+
+# List targets:
+systemctl list-units --type=target     # Active targets
+systemctl list-units --type=target --all  # All targets
+
+# Target dependencies:
+systemctl list-dependencies multi-user.target  # Target dependencies
+systemctl list-dependencies --reverse rescue.target  # Reverse dependencies
+
+## 7. SYSTEMD SERVICES & UNITS
+systemctl list-units                    # List active units
+systemctl list-units --type=service     # List services only
+systemctl list-unit-files               # List all unit files
+systemctl list-unit-files --state=enabled  # Enabled services only
+
+# Service management:
+sudo systemctl enable service_name      # Enable service at boot
+sudo systemctl disable service_name     # Disable service at boot
+sudo systemctl mask service_name        # Mask service (prevent starting)
+sudo systemctl unmask service_name      # Unmask service
+
+# Unit file locations:
+ls /etc/systemd/system/                 # Custom unit files
+ls /lib/systemd/system/                 # System unit files
+ls /usr/lib/systemd/system/             # Package unit files
+
+# Create custom service:
+sudo nano /etc/systemd/system/myservice.service
+# [Unit]
+# Description=My Custom Service
+# After=network.target
+#
+# [Service]
+# Type=simple
+# ExecStart=/usr/local/bin/myapp
+# Restart=always
+# User=myuser
+#
+# [Install]
+# WantedBy=multi-user.target
+
+sudo systemctl daemon-reload            # Reload unit files
+sudo systemctl enable myservice         # Enable custom service
+
+## 8. BOOT TROUBLESHOOTING
+# Boot into recovery mode:
+# Add "single" or "1" to kernel parameters in GRUB
+
+# Boot with different runlevel:
+# Add "systemd.unit=rescue.target" to kernel parameters
+
+# Boot without graphics:
+# Add "nomodeset" to kernel parameters
+
+# Boot with minimal system:
+# Add "systemd.unit=emergency.target" to kernel parameters
+
+# Check boot issues:
+journalctl -b -p err                    # Boot errors only
+journalctl -b -u service_name           # Specific service boot logs
+systemctl --failed                     # Failed services
+systemd-analyze critical-chain         # Boot bottlenecks
+
+## 9. KERNEL COMPILATION (Advanced)
+# Install build dependencies:
+sudo apt install build-essential libncurses-dev bison flex libssl-dev libelf-dev
+
+# Download kernel source:
+wget https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.15.tar.xz
+tar -xf linux-5.15.tar.xz
+cd linux-5.15
+
+# Configure kernel:
+make menuconfig                         # Configure with menu
+make oldconfig                          # Use old configuration
+cp /boot/config-$(uname -r) .config     # Copy current config
+make localmodconfig                     # Minimal config for current system
+
+# Compile kernel:
+make -j$(nproc)                         # Compile with all CPU cores
+make modules                            # Compile modules
+sudo make modules_install               # Install modules
+sudo make install                       # Install kernel
+
+# Update bootloader:
+sudo update-grub                        # Update GRUB configuration
+
+## 10. HARDWARE DETECTION
+lspci                                   # PCI devices
+lspci -v                                # Verbose PCI information
+lsusb                                   # USB devices
+lsusb -v                                # Verbose USB information
+lshw                                    # Comprehensive hardware info
+lshw -short                             # Hardware summary
+lsblk                                   # Block devices
+lscpu                                   # CPU information
+lsmem                                   # Memory information
+lsof                                    # Open files and devices
+
+# Hardware directories:
+ls /sys/class/                          # Hardware classes
+ls /sys/devices/                        # Device tree
+ls /dev/                                # Device files
+ls /proc/                               # Process and system info
+
+## 11. FIRMWARE & BIOS
+dmidecode                               # DMI/SMBIOS information
+dmidecode -t system                     # System information
+dmidecode -t bios                       # BIOS information
+dmidecode -t memory                     # Memory information
+sudo biosdecode                         # BIOS information
+sudo vpddecode                          # VPD information
+
+# UEFI information:
+ls /sys/firmware/efi/                   # EFI firmware interface
+efibootmgr                             # EFI boot manager (if available)
+
+## 12. RUNLEVELS (Legacy SysV)
+runlevel                               # Current and previous runlevel
+who -r                                 # Current runlevel
+telinit 3                              # Switch to runlevel 3
+init 5                                 # Switch to runlevel 5
+
+# Traditional runlevels:
+# 0 - Halt
+# 1 - Single user mode
+# 2 - Multi-user without networking
+# 3 - Multi-user with networking
+# 4 - Unused
+# 5 - Multi-user with networking and GUI
+# 6 - Reboot
+
+## 13. BOOT PARAMETERS & PROC
+cat /proc/cmdline                       # Kernel command line
+cat /proc/sys/kernel/hostname           # System hostname
+echo "value" | sudo tee /proc/sys/kernel/parameter  # Set kernel parameter
+sysctl -a                              # All kernel parameters
+sysctl kernel.hostname                 # Specific parameter
+sudo sysctl -w kernel.parameter=value  # Set parameter temporarily
+
+# Persistent kernel parameters:
+sudo nano /etc/sysctl.conf             # System parameters
+sudo nano /etc/sysctl.d/99-custom.conf # Custom parameters
+sudo sysctl -p                         # Reload sysctl configuration
+
+## 14. EMERGENCY BOOT PROCEDURES
+# Boot from rescue media and:
+# 1. Mount root filesystem
+sudo mount /dev/sda1 /mnt
+sudo mount --bind /dev /mnt/dev
+sudo mount --bind /proc /mnt/proc
+sudo mount --bind /sys /mnt/sys
+
+# 2. Chroot into system
+sudo chroot /mnt
+
+# 3. Fix bootloader
+update-grub
+grub-install /dev/sda
+
+# 4. Exit and unmount
+exit
+sudo umount /mnt/sys /mnt/proc /mnt/dev /mnt
+
+## 15. BOOT LOGGING & ANALYSIS
+# Boot logs:
+journalctl -b                          # Current boot log
+journalctl -b -1                       # Previous boot log
+journalctl -b --since="10 minutes ago" # Recent boot messages
+journalctl -u systemd-logind           # Specific service logs
+
+# Kernel logs:
+dmesg -l err                           # Kernel errors only
+dmesg -l warn                          # Kernel warnings
+dmesg -f kern                          # Kernel facility only
+
+# Boot performance:
+systemd-analyze time                   # Boot timing
+systemd-analyze blame | head -10       # Top 10 slow services
+systemd-analyze critical-chain         # Critical boot path
+
+## LPIC BOOT TROUBLESHOOTING CHECKLIST:
+1. Check GRUB configuration (/etc/default/grub)
+2. Verify kernel parameters (cat /proc/cmdline)
+3. Check systemd default target (systemctl get-default)
+4. Review boot logs (journalctl -b)
+5. Analyze failed services (systemctl --failed)
+6. Check hardware detection (dmesg, lshw)
+7. Verify initramfs (lsinitramfs)
+8. Test boot with different parameters
+9. Use rescue mode if necessary
+10. Rebuild bootloader if corrupted

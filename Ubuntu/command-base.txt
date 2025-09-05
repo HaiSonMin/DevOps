@@ -1,0 +1,186 @@
+# UBUNTU FILE & BASIC OPERATIONS - COMPLETE GUIDE
+
+## 1. ĐIỀU HƯỚNG THƯ MỤC (Directory Navigation)
+pwd                                      # In thư mục làm việc hiện tại
+cd /path/to/directory                    # Di chuyển đến thư mục
+cd ~                                     # Về home directory
+cd ..                                    # Lên thư mục cha
+cd -                                     # Quay lại thư mục trước đó
+cd                                       # Về home directory
+
+## 2. LIỆT KÊ FILE VÀ THƯ MỤC (Listing Files)
+ls                                       # Liệt kê files và folders
+ls -l                                    # Định dạng dài (permissions, owner, size, date)
+ls -a                                    # Hiện tất cả files (kể cả hidden files)
+ls -la                                   # Kết hợp long format và all files
+ls -lha                                  # Thêm human readable size (1.2K, 3.4M)
+ls -ltha                                 # Thêm sắp xếp theo thời gian
+ls -R                                    # Liệt kê đệ quy (recursive)
+ls *.txt                                 # Liệt kê files theo pattern
+ll                                       # Alias cho ls -alF
+
+## 3. TẠO FILE VÀ THƯ MỤC (Creating)
+touch filename                           # Tạo file trống hoặc update timestamp
+mkdir dirname                            # Tạo thư mục
+mkdir -p path/to/nested/dir              # Tạo thư mục nested
+mkdir -m 755 dirname                     # Tạo thư mục với permissions cụ thể
+
+## 4. SAO CHÉP (Copying)
+cp file1 file2                           # Sao chép file
+cp file1 /path/to/destination/           # Sao chép file đến thư mục khác
+cp -r dir1 dir2                          # Sao chép thư mục (recursive)
+cp -a source dest                        # Sao chép giữ nguyên attributes
+cp -i file1 file2                        # Interactive (hỏi trước khi ghi đè)
+cp -v source dest                        # Verbose (hiển thị quá trình)
+cp -u source dest                        # Update (chỉ copy nếu newer)
+
+## 5. DI CHUYỂN VÀ ĐỔI TÊN (Moving/Renaming)
+mv old_name new_name                     # Đổi tên file/folder
+mv file /path/to/destination/            # Di chuyển file
+mv dir1 dir2                             # Di chuyển/đổi tên thư mục
+mv -i source dest                        # Interactive mode
+mv -v source dest                        # Verbose mode
+mv *.txt /destination/                   # Di chuyển nhiều files theo pattern
+
+## 6. XÓA (Deleting)
+rm filename                              # Xóa file
+rm -i filename                           # Interactive (xác nhận trước khi xóa)
+rm -f filename                           # Force delete (không hỏi)
+rm -r dirname                            # Xóa thư mục (recursive)
+rm -rf dirname                           # Force delete thư mục
+rmdir dirname                            # Xóa thư mục trống
+rm *.txt                                 # Xóa files theo pattern
+
+## 7. XEM NỘI DUNG FILE (Viewing Files)
+cat filename                             # Hiển thị toàn bộ nội dung file
+cat file1 file2                          # Hiển thị nhiều files
+head filename                            # 10 dòng đầu
+head -n 5 filename                       # 5 dòng đầu
+tail filename                            # 10 dòng cuối
+tail -n 5 filename                       # 5 dòng cuối  
+tail -f filename                         # Theo dõi realtime (log files)
+less filename                            # Xem file với pagination (q để thoát)
+more filename                            # Xem file từng trang
+grep "pattern" filename                  # Tìm text trong file
+grep -n "pattern" filename               # Tìm text với số dòng
+grep -r "pattern" directory              # Tìm trong thư mục
+
+## 8. CHỈNH SỬA FILE (Editing Files)
+nano filename                            # Text editor đơn giản
+vim filename                             # Vi/Vim editor
+echo "text" > filename                   # Ghi đè nội dung file
+echo "text" >> filename                  # Nối nội dung vào file
+tee filename                             # Ghi input vào file và stdout
+tee -a filename                          # Append mode
+
+## 9. PERMISSIONS VÀ OWNERSHIP
+ls -l filename                           # Xem permissions
+chmod 755 filename                       # Set permissions (rwxr-xr-x)
+chmod +x filename                        # Thêm execute permission
+chmod -w filename                        # Xóa write permission
+chmod u+r,g+w,o+x filename              # Set permissions chi tiết
+chown user filename                      # Đổi owner
+chown user:group filename                # Đổi owner và group
+chgrp group filename                     # Đổi group
+sudo chown -R user:group directory      # Đổi ownership recursive
+
+## 10. TÌM KIẾM (Finding)
+find . -name "filename"                  # Tìm file theo tên
+find . -type f -name "*.txt"             # Tìm files .txt
+find . -type d -name "dirname"           # Tìm thư mục
+find . -size +1M                         # Tìm files > 1MB
+find . -mtime -7                         # Files modified trong 7 ngày
+find . -user username                    # Files thuộc về user
+locate filename                          # Tìm file nhanh (cần updatedb)
+which command                            # Tìm đường dẫn lệnh
+whereis command                          # Tìm binary, source, manual
+
+## 11. NÉN VÀ GIẢI NÉN (Compression)
+tar -czf archive.tar.gz files            # Tạo tar.gz archive
+tar -xzf archive.tar.gz                  # Giải nén tar.gz
+tar -czf backup.tar.gz /path/to/backup   # Backup thư mục
+tar -tf archive.tar.gz                   # Liệt kê nội dung archive
+zip -r archive.zip directory             # Tạo zip file
+unzip archive.zip                        # Giải nén zip
+unzip -l archive.zip                     # Liệt kê nội dung zip
+gzip filename                            # Nén file thành .gz
+gunzip filename.gz                       # Giải nén .gz
+
+## 12. LIÊN KẾT (Links)
+ln -s target linkname                    # Tạo symbolic link
+ln target linkname                       # Tạo hard link
+readlink linkname                        # Xem target của symlink
+ls -la linkname                          # Kiểm tra link
+
+## 13. THÔNG TIN VỀ FILE
+file filename                            # Xác định type của file
+stat filename                            # Thông tin chi tiết về file
+du -h filename                           # Kích thước file/thư mục
+du -sh directory                         # Tổng kích thước thư mục
+df -h                                    # Dung lượng disk
+df -Th                                   # Thông tin filesystem
+wc filename                              # Đếm lines, words, characters
+wc -l filename                           # Đếm số dòng
+wc -w filename                           # Đếm số từ
+
+## 14. SO SÁNH FILES
+diff file1 file2                         # So sánh 2 files
+diff -u file1 file2                      # Unified diff format
+cmp file1 file2                          # So sánh binary
+comm file1 file2                         # So sánh sorted files
+
+## 15. QUẢN LÝ PROCESS VÀ SYSTEM
+ps aux                                   # Liệt kê processes
+ps -ef                                   # Process tree
+top                                      # Task manager
+htop                                     # Improved top (nếu đã cài)
+kill PID                                 # Kill process bằng PID
+killall processname                      # Kill process bằng tên
+jobs                                     # Jobs đang chạy
+bg                                       # Chạy job ở background
+fg                                       # Chuyển job về foreground
+nohup command &                          # Chạy command không bị interrupt
+
+## 16. LỊCH SỬ VÀ ALIAS
+history                                  # Xem lịch sử lệnh
+history | grep "command"                 # Tìm trong lịch sử
+!!                                       # Lặp lại lệnh trước
+!n                                       # Lặp lại lệnh số n trong history
+alias ll='ls -alF'                       # Tạo alias
+unalias ll                               # Xóa alias
+alias                                    # Xem tất cả aliases
+
+## 17. HOSTNAME VÀ SYSTEM INFO
+hostname                                 # Xem hostname
+sudo hostnamectl set-hostname "new-name" # Đổi hostname
+hostnamectl                              # Thông tin system
+uname -a                                 # System information
+uptime                                   # System uptime
+whoami                                   # Current user
+id                                       # User ID info
+date                                     # Ngày giờ hiện tại
+cal                                      # Calendar
+
+## 18. NETWORK BASIC
+netstat -tlpun                           # Network statistics
+# -t (TCP), -l (listen), -p (program), -u (UDP), -n (numeric)
+ss -tlpun                                # Modern netstat replacement
+ping host                                # Ping network host
+wget url                                 # Download file từ URL
+curl url                                 # Transfer data from server
+
+## 19. SYSTEM CONTROL
+sudo reboot                              # Restart system
+sudo shutdown -h now                     # Shutdown immediately
+sudo shutdown -r +5                     # Restart sau 5 phút
+sudo -i                                  # Chuyển sang root
+exit                                     # Thoát shell hiện tại
+logout                                   # Logout user session
+
+## 20. INPUT/OUTPUT REDIRECTION
+command > output.txt                     # Redirect stdout to file (overwrite)
+command >> output.txt                    # Redirect stdout to file (append)
+command 2> error.txt                     # Redirect stderr to file
+command &> all.txt                       # Redirect both stdout và stderr
+command | another_command                # Pipe output to another command
+command < input.txt                      # Input từ file

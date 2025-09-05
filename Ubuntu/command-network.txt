@@ -1,0 +1,189 @@
+# UBUNTU NETWORK COMMANDS - COMPLETE GUIDE
+
+## 1. KIỂM TRA KẾT NỐI MẠNG (Network Connectivity)
+ping hostname                            # Ping một host/IP
+ping -c 4 hostname                       # Ping 4 lần rồi dừng
+ping6 hostname                           # Ping IPv6
+traceroute hostname                      # Trace route to host
+tracepath hostname                       # Trace network path
+mtr hostname                             # Realtime traceroute (My TraceRoute)
+telnet host port                         # Test TCP connection to port
+nc -zv host port                         # Test port connectivity với netcat
+nmap hostname                            # Scan ports trên host
+
+## 2. THÔNG TIN NETWORK INTERFACES
+ifconfig                                 # Xem thông tin network interfaces (deprecated)
+ip addr show                             # Hiển thị địa chỉ IP của interfaces
+ip a                                     # Short form của ip addr show
+ip link show                             # Hiển thị network interfaces
+ip route show                            # Hiển thị routing table
+route -n                                 # Routing table (numeric)
+hostname -I                              # Hiển thị tất cả IP addresses
+hostname -i                              # Hiển thị IP address của hostname
+
+## 3. CẤU HÌNH NETWORK INTERFACE
+sudo ip addr add 192.168.1.100/24 dev eth0  # Thêm IP address
+sudo ip addr del 192.168.1.100/24 dev eth0  # Xóa IP address
+sudo ip link set eth0 up                     # Bật interface
+sudo ip link set eth0 down                   # Tắt interface
+sudo ifconfig eth0 192.168.1.100 netmask 255.255.255.0  # Set IP (deprecated)
+sudo ifconfig eth0 up                        # Bật interface (deprecated)
+sudo ifconfig eth0 down                      # Tắt interface (deprecated)
+
+## 4. ROUTING
+ip route                                 # Xem routing table
+sudo ip route add 192.168.2.0/24 via 192.168.1.1  # Thêm route
+sudo ip route del 192.168.2.0/24        # Xóa route
+sudo ip route add default via 192.168.1.1  # Set default gateway
+route add default gw 192.168.1.1        # Set default gateway (deprecated)
+
+## 5. NETWORK STATISTICS VÀ CONNECTIONS
+netstat -tlpun                           # Tất cả listening ports
+# -t (TCP), -l (listen), -p (program), -u (UDP), -n (numeric)
+netstat -an                              # Tất cả connections
+netstat -rn                              # Routing table
+ss -tlpun                                # Modern replacement cho netstat
+ss -an                                   # Tất cả socket connections
+ss -s                                    # Socket statistics summary
+lsof -i                                  # List open files (network)
+lsof -i :80                              # Processes sử dụng port 80
+lsof -i tcp                              # TCP connections
+
+## 6. DNS
+nslookup hostname                        # DNS lookup
+dig hostname                             # DNS lookup chi tiết
+dig @8.8.8.8 hostname                    # DNS lookup với server cụ thể
+dig -x IP_ADDRESS                        # Reverse DNS lookup
+host hostname                            # Simple DNS lookup
+systemd-resolve --status                 # DNS resolver status
+systemd-resolve hostname                 # Resolve hostname
+
+## 7. NETWORK MONITORING
+iftop                                    # Realtime network bandwidth usage
+nethogs                                  # Network usage by process
+iotop                                    # I/O usage by process
+tcpdump -i eth0                          # Capture packets trên interface
+tcpdump -i eth0 port 80                  # Capture HTTP traffic
+wireshark                                # GUI network analyzer (nếu cài đặt)
+vnstat                                   # Network statistics
+vnstat -d                                # Daily network usage
+
+## 8. FIREWALL (UFW - Uncomplicated Firewall)
+sudo ufw status                          # Trạng thái firewall
+sudo ufw enable                          # Bật firewall
+sudo ufw disable                         # Tắt firewall
+sudo ufw allow 22                        # Cho phép port 22 (SSH)
+sudo ufw allow ssh                       # Cho phép SSH service
+sudo ufw allow from 192.168.1.0/24      # Cho phép từ subnet
+sudo ufw deny 80                         # Block port 80
+sudo ufw delete allow 22                 # Xóa rule
+sudo ufw reset                           # Reset tất cả rules
+
+## 9. IPTABLES (Advanced Firewall)
+sudo iptables -L                         # List rules
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT  # Allow SSH
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT  # Allow HTTP
+sudo iptables -A INPUT -j DROP           # Drop all other traffic
+sudo iptables -F                         # Flush all rules
+sudo iptables-save                       # Save rules
+sudo iptables-restore                    # Restore rules
+
+## 10. NETWORK SERVICES
+sudo systemctl status networking         # Network service status
+sudo systemctl restart networking       # Restart networking
+sudo systemctl status NetworkManager    # NetworkManager status
+sudo systemctl restart NetworkManager   # Restart NetworkManager
+sudo service network-manager restart    # Alternative restart
+
+## 11. WIRELESS
+iwconfig                                 # Wireless interface configuration
+iwlist scan                              # Scan wireless networks
+nmcli dev wifi list                      # List WiFi networks (NetworkManager)
+nmcli dev wifi connect "SSID" password "password"  # Connect to WiFi
+nmcli con show                           # Show connections
+
+## 12. NETWORK CONFIGURATION FILES
+cat /etc/network/interfaces              # Network interfaces config (Debian/Ubuntu)
+cat /etc/netplan/*.yaml                  # Netplan configuration (Ubuntu 18+)
+cat /etc/resolv.conf                     # DNS configuration
+cat /etc/hosts                           # Local hostname resolution
+cat /etc/hostname                        # System hostname
+cat /etc/nsswitch.conf                   # Name service switch config
+
+## 13. DHCP
+sudo dhclient eth0                       # Request DHCP lease
+sudo dhclient -r eth0                    # Release DHCP lease
+sudo dhclient -v eth0                    # Verbose DHCP request
+cat /var/lib/dhcp/dhclient.leases        # DHCP lease information
+
+## 14. NETWORK TESTING & DEBUGGING
+curl -I http://website.com               # HTTP headers
+curl -o file.txt http://website.com/file # Download file
+wget http://website.com/file             # Download file với wget
+wget -c http://website.com/largefile     # Continue partial download
+curl -X POST -d "data=value" http://api.com  # POST request
+curl -H "Content-Type: application/json" -d '{"key":"value"}' http://api.com
+
+## 15. BANDWIDTH TESTING
+speedtest-cli                            # Internet speed test (cần cài đặt)
+iperf3 -s                                # iPerf server mode
+iperf3 -c server_ip                      # iPerf client mode
+
+## 16. NETWORK SHARES (SMB/CIFS)
+sudo mount -t cifs //server/share /mnt/share  # Mount SMB share
+sudo umount /mnt/share                   # Unmount share
+smbclient -L //server                    # List SMB shares
+smbclient //server/share                 # Connect to SMB share
+
+## 17. SSH VÀ SCP
+ssh user@hostname                        # SSH connect
+ssh -p 2222 user@hostname                # SSH với port khác
+scp file user@host:/path/                # Copy file qua SSH
+scp -r directory user@host:/path/        # Copy directory
+scp user@host:/path/file .               # Copy file từ remote
+rsync -av source/ user@host:/destination/  # Sync directories
+
+## 18. VPN
+sudo openvpn config.ovpn                 # Connect OpenVPN
+sudo systemctl status openvpn            # OpenVPN service status
+
+## 19. NETWORK TIME PROTOCOL (NTP)
+timedatectl status                       # Time synchronization status
+sudo timedatectl set-ntp true            # Enable NTP
+ntpq -p                                  # NTP peers status
+chrony sources                           # Chrony time sources
+
+## 20. NETWORK TROUBLESHOOTING
+dmesg | grep -i network                  # Kernel network messages
+journalctl -u networking                 # Network service logs
+ethtool eth0                             # Ethernet tool info
+mii-tool eth0                            # Media Independent Interface tool
+
+## 21. BRIDGE VÀ BONDING
+sudo brctl show                          # Show bridges
+sudo brctl addbr br0                     # Create bridge
+sudo brctl addif br0 eth0                # Add interface to bridge
+
+## 22. NETWORK NAMESPACE
+sudo ip netns list                       # List network namespaces
+sudo ip netns add test                   # Create namespace
+sudo ip netns exec test command          # Execute command in namespace
+
+## USEFUL NETWORK COMMANDS COMBINATIONS:
+# Xem tất cả listening services:
+sudo netstat -tlnp | grep LISTEN
+
+# Xem traffic realtime trên interface:
+sudo tcpdump -i any -n -l | head -20
+
+# Test kết nối đến nhiều ports:
+nmap -p 22,80,443 hostname
+
+# Kiểm tra DNS resolution time:
+dig +stats hostname
+
+# Monitor bandwidth usage:
+watch -n1 cat /proc/net/dev
+
+# Tìm process sử dụng port cụ thể:
+sudo lsof -i :80
