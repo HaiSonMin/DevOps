@@ -1,0 +1,4 @@
+Các bước:
+1. Kết nối server tới jenkins agent
+2. Kết nối jenkins server đến github | gitlab -> dùng plugin (Blue Ocean, Gitlab, Github)
+3. 

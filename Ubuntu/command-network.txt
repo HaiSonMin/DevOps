@@ -171,7 +171,7 @@ sudo ip netns exec test command          # Execute command in namespace
 
 ## USEFUL NETWORK COMMANDS COMBINATIONS:
 # Xem tất cả listening services:
-sudo netstat -tlnp | grep LISTEN
+sudo netstat -tplun | grep LISTEN
 
 # Xem traffic realtime trên interface:
 sudo tcpdump -i any -n -l | head -20

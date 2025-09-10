@@ -1,0 +1,171 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# D:\VirtualBox => Các cấu hình được lưu trữ tại đây
+# Pass: Bokute22102000
+# etc host 
+
+# 192.168.1.110 auto-server
+
+Vagrant.configure("2") do |config|
+  # Base box Ubuntu 22.04 LTS
+  config.vm.box = "ubuntu/jammy64"
+  
+  # Cấu hình chung cho tất cả máy ảo
+  config.vm.boot_timeout = 600  # Tăng timeout lên 10 phút
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "4096"
+    vb.cpus = 2
+    vb.gui = false  # Bật GUI để debug
+    # Tối ưu VirtualBox
+    vb.customize ["modifyvm", :id, "--vram", "16"]
+    vb.customize ["modifyvm", :id, "--accelerate3d", "off"]
+  end
+
+  # Định nghĩa 3 máy ảo K8s
+  machines = [
+    { name: "automation", ip: "192.168.1.110", memory: 4096, cpus: 2, disk: 20 },
+  ]
+
+  machines.each do |machine|
+    config.vm.define machine[:name] do |node|
+      # Hostname
+      node.vm.hostname = machine[:name]
+      
+      # Network - Bridge mode với IP tĩnh
+      node.vm.network "public_network", 
+        ip: machine[:ip],
+        netmask: "255.255.255.0",
+        bridge: "Realtek 8852CE WiFi 6E PCI-E NIC"
+      
+      # Provider-specific settings
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = machine[:name]
+        vb.memory = machine[:memory]
+        vb.cpus = machine[:cpus]
+        
+        # Tối ưu cho K8s
+        vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+        
+      end
+
+      # Provisioning script chung
+      node.vm.provision "shell", inline: <<-SHELL
+        # Update system
+        apt-get update
+        apt-get upgrade -y
+        
+        # Cấu hình hosts file
+        cat >> /etc/hosts << 'EOF'
+127.0.0.1 localhost
+192.168.1.90 rancher.server
+192.168.1.91 jenkins.server
+192.168.1.92 gitlab.server
+192.168.1.110 auto.server
+EOF
+
+        # Cấu hình netplan cho IP tĩnh
+        cat > /etc/netplan/50-vagrant.yaml << 'EOF'
+network:
+  version: 2
+  ethernets:
+    enp0s8:
+      dhcp4: false
+      addresses:
+        - #{machine[:ip]}/24
+      gateway4: 192.168.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+EOF
+
+        netplan apply
+        sudo apt update -y
+        sudo apt upgrade -y
+
+
+        # ----------- Triển khai với Gitlab Runner-----------
+        # curl -s https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh | sudo bash
+        # sudo curl -L --output /usr/local/bin/gitlab-runner "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64"
+        # sudo chmod +x /usr/local/bin/gitlab-runner
+        # sudo useradd --comment 'GitLab Runner' --create-home --shell /bin/bash gitlab-runner
+        # sudo gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner
+        # sudo gitlab-runner start
+        # gitlab-runner -version
+        # gitlab-runner status
+
+        # gitlab-runner register 
+        # - Nhập url của gitlab: http://gitlab.server/
+        # - Nhập token của gitlab: token
+        # - Nhập description: auto-server
+        # - Nhập tags: auto-server
+        # - Nhập executor: shell
+
+        
+
+
+
+        # vi /etc/gitlab-runner/config.toml
+        # Sửa thông số concurrency = 6 => Theo dõi được 6 jobs cùng lúc
+
+        # nohup gitlab-runner run --working-directory /home/gitlab-runner/ --config /etc/gitlab-runner/config.toml --service gitlab-runner --user gitlab-runner 2>&1 &
+        # Giải thích cấu hình:
+          # 1. nohup
+          # Chạy process không bị terminate khi logout session
+          # Process sẽ tiếp tục chạy ngay cả khi đóng terminal
+          # 2. gitlab-runner run
+          # Start GitLab Runner để lắng nghe và xử lý jobs từ GitLab server
+          # 3. --working-directory /home/gitlab-runner/
+          # Thư mục làm việc cho runner (build artifacts, clone repos)
+          # 4. --config /etc/gitlab-runner/config.toml
+          # File cấu hình chứa thông tin registration, executors
+          # 5. --service gitlab-runner --user gitlab-runner
+          # Chạy với user gitlab-runner (non-root user)
+          # 6. > /dev/null 2>&1 &
+          # Redirect output và error logs vào /dev/null (không hiển thị)
+          # & chạy background
+
+        # Check running:
+        # ps aux | grep gitlab-runner
+
+        # Cấu hình cho gitlab-runner không cần sudo password
+        # sudo visudo
+        # Thêm dòng này vào cuối file sudoers: 
+        # gitlab-runner ALL=(ALL) NOPASSWD: ALL
+
+
+
+        # ----------- Triển khai với Jenkins -----------
+        # apt install openjdk-17-jdk -y 
+        # update-alternatives --config java # Xem các phiên bản java có thể chọn -> Uw tiên 17
+        # adduser jenkins
+        # mkdir /var/lib/jenkins
+        # sudo chown -R jenkins:jenkins /var/lib/jenkins
+        # cd /var/lib/jenkins
+        # su jenkins
+        # Chạy các câu lệnh ở node vừa tạo
+        # echo 93a8a16e93e311843f85f4ef38c532109b760bee8c024ff5c23919e362476a1e > secret-file
+        # curl -sO http://jenkins.server/jnlpJars/agent.jar
+
+        java -jar agent.jar -url http://jenkins.server:8080/ -secret @secret-file -name automation -webSocket -workDir "/var/lib/jenkins"
+
+        # java -jar agent.jar -url http://jenkins.server:8080/ -secret @secret-file -name automation -webSocket -workDir "/var/lib/jenkins" 
+        # ----------- Cài đặc docker -----------
+        sudo apt install -y docker.io
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        newgrp docker
+        sudo systemctl restart docker
+        sudo usermod -aG docker vagrant
+        sudo usermod -aG docker bodevops
+        sudo usermod -aG docker gitlab-runner
+        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        sudo docker --version
+        sudo docker-compose --version
+
+      SHELL
+    end
+  end
+end

@@ -1,0 +1,230 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# D:\VirtualBox => Các cấu hình được lưu trữ tại đây
+
+
+Vagrant.configure("2") do |config|
+  # Base box Ubuntu 22.04 LTS
+  config.vm.box = "ubuntu/jammy64"
+  
+  # Cấu hình chung cho tất cả máy ảo
+  config.vm.boot_timeout = 600  # Tăng timeout lên 10 phút
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "2048"
+    vb.cpus = 2
+    # Tối ưu VirtualBox
+    vb.customize ["modifyvm", :id, "--vram", "16"]
+    vb.customize ["modifyvm", :id, "--accelerate3d", "off"]
+  end
+
+  # Định nghĩa 3 máy ảo
+  machines = [
+    { name: "mongodb-server-1", ip: "192.168.1.160", memory: 2048, cpus: 2, disk: 15 },
+    { name: "mongodb-server-2", ip: "192.168.1.161", memory: 2048, cpus: 2, disk: 15 },
+    { name: "mongodb-server-3", ip: "192.168.1.162", memory: 2048, cpus: 2, disk: 15 },
+  ]
+
+  machines.each do |machine|
+    config.vm.define machine[:name] do |node|
+      # Hostname
+      node.vm.hostname = machine[:name]
+      
+      # Network - Bridge mode với IP tĩnh
+      node.vm.network "public_network", 
+        ip: machine[:ip],
+        netmask: "255.255.255.0",
+        bridge: "Realtek 8852CE WiFi 6E PCI-E NIC"
+      
+      # Provider-specific settings
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = machine[:name]
+        vb.memory = machine[:memory]
+        vb.cpus = machine[:cpus]
+        
+        # Tối ưu cho K8s
+        vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+        
+      end
+
+      # Provisioning script chung
+      node.vm.provision "shell", inline: <<-SHELL
+        # Update system
+        apt-get update
+        apt-get upgrade -y
+        
+        # Cấu hình hosts file
+        cat >> /etc/hosts << 'EOF'
+127.0.0.1 localhost
+192.168.1.160 mongodb-server-1
+192.168.1.161 mongodb-server-2
+192.168.1.162 mongodb-server-3
+EOF
+
+        # Cấu hình netplan cho IP tĩnh
+        cat > /etc/netplan/50-vagrant.yaml << 'EOF'
+network:
+  version: 2
+  ethernets:
+    enp0s8:
+      dhcp4: false
+      addresses:
+        - #{machine[:ip]}/24
+      gateway4: 192.168.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+EOF
+
+        netplan apply
+        apt update -y
+        apt upgrade -y
+
+        # apt install -y net-tools telnet traceroute
+
+        # apt install software-properties-common gnupg apt-transport-https ca-certificates -y
+        # curl -fsSL https://pgp.mongodb.com/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+        # echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+        # apt update
+        # apt install mongodb-org -y
+        # systemctl start mongod
+        # systemctl enable mongod
+
+        # Cấu hình manually:
+        #  vi /etc/mongod.conf
+
+        # bindIp: 0.0.0.0
+        # replication:
+        #   replSetName: "mongodb-bodevops"
+        
+        # systemctl restart mongod
+
+        # Cấu hình replica set:
+        # mongosh
+        # rs.initiate(
+        #   _id: "mongodb-bodevops",
+        #   members: [
+        #     {_id: 0, host: "mongodb-server-1:27017"},
+        #     {_id: 1, host: "mongodb-server-2:27017"},
+        #     {_id: 2, host: "mongodb-server-3:27017"},
+        #   ]
+        # )
+        # rs.status() # Kiểm tra trạng thái của replica set
+        # rs.isMaster() 
+        # rs.isSecondary() 
+        # rs.isPrimary()
+        # rs.isArbiter() 
+        # rs.isPrimaryPreferred()
+
+        # Test insert data để check ở cả 3 node:
+        # Ở node 1:
+        # use devops 
+        # db.test.insertOne({name: "test node 1"})
+        # db.test.find()
+
+        # Ở node 2:
+        # use devops
+        # db.test.insertOne({name: "test node 2"})
+        # db.test.find()
+
+        # Ở node 3:
+        # use devops
+        # db.test.insertOne({name: "test node 3"})
+        # db.test.find()
+
+
+        # apt install -y keepalived
+        # vi /etc/keepalived/keepalived.conf
+
+        # -----> Thực hiện trên server 1 <-----
+      #   vrrp_instance VI_1 {
+      #     state MASTER
+      #     interface enp0s8
+      #     virtual_router_id 51
+      #     priority 100
+      #     advert_int 1
+      #     authentication {
+      #         auth_type PASS
+      #         auth_pass password
+      #     }
+      #     virtual_ipaddress {
+      #         192.168.213.14
+      #     }
+      # }
+      # systemctl start keepalived
+      # systemctl enable keepalived
+      # systemctl status keepalived
+
+        # -----> Thực hiện trên server 2 <-----
+      #   vrrp_instance VI_1 {
+      #     state BACKUP
+      #     interface enp0s8
+      #     virtual_router_id 51
+      #     priority 90
+      #     advert_int 1
+      #     authentication {
+      #         auth_type PASS
+      #         auth_pass password
+      #     }
+      #     virtual_ipaddress {
+      #         192.168.213.14
+      #     }
+      # }
+      # systemctl start keepalived
+      # systemctl enable keepalived
+      # systemctl status keepalived
+
+      
+      # -----> Thực hiện trên server 3 <-----
+      #   vrrp_instance VI_1 {
+      #     state BACKUP
+      #     interface enp0s8
+      #     virtual_router_id 51
+      #     priority 80
+      #     advert_int 1
+      #     authentication {
+      #         auth_type PASS
+      #         auth_pass password
+      #     }
+      #     virtual_ipaddress {
+      #         192.168.213.14
+      #     }
+      # }
+      # systemctl start keepalived
+      # systemctl enable keepalived
+      # systemctl status keepalived
+
+      # Tiếp tục config ở mongo priority ở server 1, 2, 3(Config ở node master)
+      # priority 100, 90, 80
+      # Ở server 1:
+      # priority 100
+      # Ở server 2:
+      # priority 90
+      # Ở server 3:
+      # priority 80
+
+
+      # mongosh "mongodb://192.168.213.14:27017" -> Kết nối tới địa chỉ này => tự động chuyển đến note master
+      # rs.config().members[0].priority = 100
+      # rs.config().members[1].priority = 90
+      # rs.config().members[2].priority = 80
+      # rs.reconfig()
+      # rs.status()
+      # rs.isMaster()
+      # rs.isSecondary()
+      # rs.isPrimary()
+      # rs.isArbiter()
+      # rs.isPrimaryPreferred()
+
+      # Check ip ảo(Master node bắc buộc phải có IP ảo)
+      # ip a => Check ip ảo ở enp0s8 phải có 192.168.213.14
+
+
+      
+
+
+      SHELL
+    end
+  end
+end

@@ -1,0 +1,8 @@
+sudo adduser bodevops
+sudo usermod -aG sudo bodevops # => Phân quyền bodevops có quyền sudo
+
+Hoặc: 
+# Thêm trực tiếp vào sudoers file
+sudo visudo
+# Thêm dòng này:
+bodevops ALL=(ALL:ALL) ALL

@@ -1,10 +1,10 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 # D:\VirtualBox => Các cấu hình được lưu trữ tại đây
-# Username: bodevops
 # Pass: Bokute22102000
+# etc host 
 
-# 192.168.1.91 jenkins-server
+# 192.168.1.92 gitlab-server => Bokute22102000
 
 # Port cho phép các server liên kết đến jenkins: 8081
 
@@ -15,7 +15,7 @@ Vagrant.configure("2") do |config|
   # Cấu hình chung cho tất cả máy ảo
   config.vm.boot_timeout = 600  # Tăng timeout lên 10 phút
   config.vm.provider "virtualbox" do |vb|
-    vb.memory = "3104"
+    vb.memory = "5120"
     vb.cpus = 2
     vb.gui = false  # Bật GUI để debug
     # Tối ưu VirtualBox
@@ -25,7 +25,7 @@ Vagrant.configure("2") do |config|
 
   # Định nghĩa 3 máy ảo K8s
   machines = [
-    { name: "jenkins-server", ip: "192.168.1.91", memory: 3104, cpus: 2, disk: 20 },
+    { name: "gitlab-server", ip: "192.168.1.92", memory: 5120, cpus: 2, disk: 20 },
   ]
 
   machines.each do |machine|
@@ -60,7 +60,8 @@ Vagrant.configure("2") do |config|
         # Cấu hình hosts file
         cat >> /etc/hosts << 'EOF'
 127.0.0.1 localhost
-192.168.1.91 jenkins.server
+192.168.1.92 gitlab.server
+
 EOF
 
         # Cấu hình netplan cho IP tĩnh
@@ -83,13 +84,22 @@ EOF
         apt update -y
         apt upgrade -y
 
-        sudo apt install nginx -y
-        sudo systemctl start nginx
-        sudo systemctl enable nginx
-        sudo systemctl status nginx
+        # Chỉ cần cài ph
+        # curl -s https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh | sudo bash
+        # sudo apt-get install gitlab-ee=16.10.9-ee.0
 
-        # netstat -tplun 
-        # Cấu hình port 8081 (inbound) -> Setup trong security (TCP port for inbound agents)
+
+        # Chỉnh URL gitlab:
+        # sudo nano /etc/gitlab/gitlab.rb
+        # external_url 'http://gitlab.server' -> Chỉnh trong này thành IP của máy hoặc domain(http://gitlab.server)
+        # sudo gitlab-ctl reconfigure
+
+        # sudo gitlab-ctl status
+
+        # Đăng nhập:
+        # http://192.168.1.92 | http://gitlab.server (ĐƯợc host trong etc của window)
+        # Username: root
+        # Password: xem trong file /etc/gitlab/initial_root_password
 
       SHELL
     end
