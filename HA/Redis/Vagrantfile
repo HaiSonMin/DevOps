@@ -10,9 +10,8 @@ Vagrant.configure("2") do |config|
   # Cấu hình chung cho tất cả máy ảo
   config.vm.boot_timeout = 600  # Tăng timeout lên 10 phút
   config.vm.provider "virtualbox" do |vb|
-    vb.memory = "3104"
+    vb.memory = "2048"
     vb.cpus = 2
-    vb.gui = false  # Bật GUI để debug
     # Tối ưu VirtualBox
     vb.customize ["modifyvm", :id, "--vram", "16"]
     vb.customize ["modifyvm", :id, "--accelerate3d", "off"]
@@ -20,9 +19,9 @@ Vagrant.configure("2") do |config|
 
   # Định nghĩa 3 máy ảo K8s
   machines = [
-    { name: "redis-server-1", ip: "192.168.1.180", memory: 2048, cpus: 2, disk: 15 },
-    { name: "redis-server-2", ip: "192.168.1.181", memory: 2048, cpus: 2, disk: 15 },
-    { name: "redis-server-3", ip: "192.168.1.182", memory: 2048, cpus: 2, disk: 15 },
+    { name: "redis-server-1", ip: "192.168.1.180", memory: 2048, cpus: 2, disk: 20 },
+    { name: "redis-server-2", ip: "192.168.1.181", memory: 2048, cpus: 2, disk: 20 },
+    { name: "redis-server-3", ip: "192.168.1.182", memory: 2048, cpus: 2, disk: 20 },
   ]
 
   machines.each do |machine|
@@ -85,36 +84,82 @@ EOF
         apt install -y net-tools telnet traceroute
 
         # -----> Cài đặt Redis <-----
-        # sudo apt install -y lsb-release curl gpg
-        # curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
-        # echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
-        # sudo apt update -y
-        # sudo apt install -y redis redis-sentinel
+        sudo apt install -y lsb-release curl gpg
+        curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+        sudo apt update -y
+        sudo apt install -y redis redis-sentinel
+        sudo systemctl enable redis-server
+        sudo systemctl start redis-server
+        sudo systemctl status redis-server
 
 
         # -----> Thực hiện trên server 1 <-----
-        # vi /etc/redis/redis.conf
-        # bind 0.0.0.0
-        # masterauth bodevops
+        # sudo vi /etc/redis/redis.conf
+        # bind 0.0.0.0 # Searh bind
+        # masterauth bodevops # Searh masterauth
         # requirepass bodevops
 
-        # systemctl restart redis-server
-        # systemctl enable redis-server
-        # systemctl status redis-server
+        # Những cấu hình cần thiết khác(optional)
+        # protected-mode no # Tắt protected mode
+        # appendonly yes # Enable AOF
+        # appendfilename "appendonly.aof"
+        # appendfsync everysec # Sync AOF every second
+        # no-appendfsync-on-rewrite yes
+        # auto-aof-rewrite-percentage 100 # Auto rewrite AOF percentage
+        # auto-aof-rewrite-min-size 64mb
+        # aof-load-truncated yes # Load truncated AOF
+        # aof-use-rdb-preamble yes
+        # aof-rewrite-incremental-fsync yes # Incremental fsync AOF
+        # aof-rewrite-incremental-fsync-delay 50ms
+        # aof-rewrite-incremental-fsync-delay-min 50ms # Incremental fsync AOF delay min
+        # aof-rewrite-incremental-fsync-delay-max 50ms
+        # maxmemory 100mb # Set max memory
+        # maxmemory-policy allkeys-lru # Set max memory policy
+        # maxmemory-samples 3 # Set max memory samples
+        # maxmemory-policy allkeys-lru # Set max memory policy
+
+        # sudo systemctl restart redis-server
+        # sudo systemctl enable redis-server
+        # sudo systemctl status redis-server
 
         # -----> Thực hiện trên server 2 và server 3 <-----
         # vi /etc/redis/redis.conf
         # bind 0.0.0.0
         # masterauth bodevops
         # requirepass bodevops
-        # replicaof 192.168.213.11 6379
+        # replicaof 192.168.1.180 6379
         
-        # systemctl restart redis-server
-        # systemctl enable redis-server
-        # systemctl status redis-server
+        # sudo systemctl restart redis-server
+        # sudo systemctl enable redis-server
+        # sudo systemctl status redis-server
 
         # Thực hiện trên server 1
         # redis-cli
+
+        # Kiểm tra HA 
+        # auth bodevops
+        # SET test "123123"
+        # GET test (Thực hiện cả 3 server)
+
+        # Thực hiện trên cả 3 servers
+        # Cấu hình sentinel
+        # sudo vi /etc/redis/sentinel.conf
+
+        # protected-mode no
+        # sentinel monitor master 192.168.1.180 6379 2 # Cần 2 server để quyết định master
+        # sentinel auth-pass master bodevops
+        # sentinel down-after-milliseconds master 5000
+        # sentinel failover-timeout master 60000
+        # sentinel parallel-syncs master 1
+
+        # sudo systemctl restart redis-sentinel
+          
+
+        # redis-cli -p 26379 sentinel masters
+        # redis-cli -p 26379 sentinel slaves master
+        # redis-cli -p 26379 sentinel sentinels master
+        # sudo systemctl stop redis-server # => Test switch master
 
       SHELL
     end

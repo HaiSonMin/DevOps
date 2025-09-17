@@ -10,7 +10,7 @@ Vagrant.configure("2") do |config|
   # Cấu hình chung cho tất cả máy ảo
   config.vm.boot_timeout = 600  # Tăng timeout lên 10 phút
   config.vm.provider "virtualbox" do |vb|
-    vb.memory = "3104"
+    vb.memory = "2048"
     vb.cpus = 2
     vb.gui = false  # Bật GUI để debug
     # Tối ưu VirtualBox
@@ -20,9 +20,9 @@ Vagrant.configure("2") do |config|
 
   # Định nghĩa 3 máy ảo K8s
   machines = [
-    { name: "postgresql-server-1", ip: "192.168.1.170", memory: 2048, cpus: 2, disk: 15 },
-    { name: "postgresql-server-2", ip: "192.168.1.171", memory: 2048, cpus: 2, disk: 15 },
-    { name: "postgresql-server-3", ip: "192.168.1.172", memory: 2048, cpus: 2, disk: 15 },
+    { name: "postgresql-server-1", ip: "192.168.1.170", memory: 2048, cpus: 2, disk: 20 },
+    { name: "postgresql-server-2", ip: "192.168.1.171", memory: 2048, cpus: 2, disk: 20 },
+    { name: "postgresql-server-3", ip: "192.168.1.172", memory: 2048, cpus: 2, disk: 20 },
   ]
 
   machines.each do |machine|
@@ -83,6 +83,177 @@ EOF
         apt upgrade -y
 
         apt install -y net-tools telnet traceroute
+
+        # wget https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb
+        # dpkg -i percona-release_latest.$(lsb_release -sc)_all.deb
+        # apt update -y
+
+        # sudo percona-release setup ppg-16
+        # sudo apt install percona-ppg-server-16
+        # sudo systemctl status postgresql.service
+        # systemctl status postgresql
+
+        # sudo apt install -y python3-pip python3-dev binutils
+        # sudo apt install percona-patroni etcd etcd-server etcd-client percona-pgbackrest -y
+        # systemctl stop {etcd,patroni,postgresql} && systemctl disable {etcd,patroni,postgresql}
+        # rm -rf /var/lib/postgresql/16/main
+
+        # Thực hiện trên server 1
+        # vi /etc/etcd/etcd.conf.yaml
+
+        # name: 'server-postgresql-1'
+        # initial-cluster-token: postgresql_cluster_bodevops
+        # initial-cluster-state: new
+        # initial-cluster: server-postgresql-1=http://192.168.1.170:2380
+        # data-dir: /var/lib/etcd
+        # initial-advertise-peer-urls: http://192.168.1.170:2380
+        # listen-peer-urls: http://192.168.1.170:2380
+        # advertise-client-urls: http://192.168.1.170:2379
+        # listen-client-urls: http://192.168.1.170:2379
+
+        # ------------------------------
+
+        # Khởi động dịch vụ etcd
+        # systemctl start etcd && systemctl enable etcd
+
+        # Kiểm tra etcd cluster
+        # etcdctl --endpoints=http://192.168.1.170:2379 member list
+
+        # Join etcd server 2 vào server 1
+        # etcdctl --endpoints=http://192.168.1.170:2379 member add server-postgresql-2 --peer-urls=http://192.168.1.171:2380
+
+        # ------------------------------
+
+        # Thực hiện trên server 2
+        
+        # Mở file cấu hình etcd
+        # vi /etc/etcd/etcd.conf.yaml
+        
+        # name: 'server-postgresql-2'
+        # initial-cluster-token: postgresql_cluster_bodevops
+        # initial-cluster-state: existing
+        # initial-cluster: server-postgresql-1=http://192.168.1.170:2380,server-postgresql-2=http://192.168.1.171:2380
+        # data-dir: /var/lib/etcd
+        # initial-advertise-peer-urls: http://192.168.1.171:2380
+        # listen-peer-urls: http://192.168.1.171:2380
+        # advertise-client-urls: http://192.168.1.171:2379
+        # listen-client-urls: http://192.168.1.171:2379
+        
+
+        # Khởi động dịch vụ etcd
+        # systemctl start etcd && systemctl enable etcd
+
+        # Thực hiện trên server 1
+        
+        # Kiểm tra etcd cluster
+        # etcdctl --endpoints=http://192.168.1.170:2379 member list
+        
+        # Join etcd server 3 vào server 1
+        # etcdctl --endpoints=http://192.168.1.170:2379 member add server-postgresql-3 --peer-urls=http://192.168.1.172:2380
+
+        # Thực hiện trên server 3
+        # Cấu hình etcd cluster
+
+        # Mở file cấu hình etcd
+        # vi /etc/etcd/etcd.conf.yaml
+        
+        # name: 'server-3'
+        # initial-cluster-token: postgresql_cluster_bodevops
+        # initial-cluster-state: existing
+        # initial-cluster: server-postgresql-1=http://192.168.1.170:2380,server-postgresql-2=http://192.168.1.171:2380,server-postgresql-3=http://192.168.1.172:2380
+        # data-dir: /var/lib/etcd
+        # initial-advertise-peer-urls: http://192.168.1.172:2380
+        # listen-peer-urls: http://192.168.1.172:2380
+        # advertise-client-urls: http://192.168.1.172:2379
+        # listen-client-urls: http://192.168.1.172:2379
+
+        # Khởi động dịch vụ etcd
+        # systemctl start etcd && systemctl enable etcd
+
+        # Thực hiện trên server 1
+        
+        # Kiểm tra etcd cluster
+        # etcdctl --endpoints=http://192.168.1.170:2379 member list
+
+        # Thực hiện trên cả 3 servers
+        # Cấu hình patroni
+
+        # Thêm các biến cần thiết
+
+        # export NODE_NAME=`hostname -f | cut -d. -f1`
+        # export NODE_IP=`ip addr show enp0s8 | awk '/inet / {print $2}' | cut -d/ -f1`
+        # DATA_DIR="/var/lib/postgresql/16/main"
+        # PG_BIN_DIR="/usr/lib/postgresql/16/bin"
+        # NAMESPACE="bodevops_percona"
+        # SCOPE="bodevops_cluster"
+        
+
+        # Tạo thư mục chứa password
+
+        # mkdir /opt/secretpg
+        # chown -R postgres. /opt/secretpg
+        # chmod -R 700 /opt/secretpg
+        
+
+        # Tạo file cấu hình patroni /etc/patroni/patroni.yml tham khảo: tại đây
+        
+        # Khởi động lại dịch vụ patroni
+        # systemctl restart patroni && systemctl enable patroni
+        
+        # Kiểm tra cluster
+        # patronictl -c /etc/patroni/patroni.yml list $SCOPE
+        
+
+        # -------------- Cấu hình HAproxy --------------
+        # apt install -y haproxy
+
+        # Backup và tạo file cấu hình mới
+        # mv /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.org
+        # vi /etc/haproxy/haproxy.cfg
+        
+
+        # Với cấu hình sau
+
+        # global
+        #     maxconn 100
+
+        # defaults
+        #     log global
+        #     mode tcp
+        #     retries 2
+        #     timeout client 30m
+        #     timeout connect 4s
+        #     timeout server 30m
+        #     timeout check 5s
+
+        # listen stats
+        #     mode http
+        #     bind *:7000
+        #     stats enable
+        #     stats uri /
+
+        # listen primary
+        #     bind *:5000
+        #     option httpchk /primary
+        #     http-check expect status 200
+        #     default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+        #     server node1 192.168.1.170:5432 maxconn 100 check port 8008
+        #     server node2 192.168.1.171:5432 maxconn 100 check port 8008
+        #     server node3 192.168.1.172:5432 maxconn 100 check port 8008
+
+        # listen standbys
+        #     balance roundrobin
+        #     bind *:5001
+        #     option httpchk /replica
+        #     http-check expect status 200
+        #     default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+        #     server node1 192.168.1.170:5432 maxconn 100 check port 8008
+        #     server node2 192.168.1.171:5432 maxconn 100 check port 8008
+        #     server node3 192.168.1.172:5432 maxconn 100 check port 8008
+        
+
+        # Khởi động lại HAproxy
+        # systemctl restart haproxy
 
 
       SHELL

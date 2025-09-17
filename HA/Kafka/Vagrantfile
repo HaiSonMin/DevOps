@@ -20,9 +20,9 @@ Vagrant.configure("2") do |config|
 
   # Định nghĩa 3 máy ảo K8s
   machines = [
-    { name: "kafka-server-1", ip: "192.168.1.150", memory: 2048, cpus: 2, disk: 15 },
-    { name: "kafka-server-2", ip: "192.168.1.151", memory: 2048, cpus: 2, disk: 15 },
-    { name: "kafka-server-3", ip: "192.168.1.152", memory: 2048, cpus: 2, disk: 15 },
+    { name: "kafka-server-1", ip: "192.168.1.150", memory: 2048, cpus: 2, disk: 20 },
+    { name: "kafka-server-2", ip: "192.168.1.151", memory: 2048, cpus: 2, disk: 20 },
+    { name: "kafka-server-3", ip: "192.168.1.152", memory: 2048, cpus: 2, disk: 20 },
   ]
 
   machines.each do |machine|
@@ -79,10 +79,115 @@ network:
 EOF
 
         netplan apply
-        apt update -y
-        apt upgrade -y
+        sudo apt update -y
+        sudo apt upgrade -y
 
-        apt install -y net-tools telnet traceroute
+        sudo apt install -y net-tools telnet traceroute
+
+        # Thực hiện trên cả 3 servers
+
+        # sudo apt install -y default-jre net-tools
+        # sudo apt install -y zookeeperd
+
+        # sudo echo "1" > /var/lib/zookeeper/myid # Áp dụng cho server 1
+        # sudo echo "2" > /var/lib/zookeeper/myid # Áp dụng cho server 2
+        # sudo echo "3" > /var/lib/zookeeper/myid # Áp dụng cho server 3
+
+        sudo vi /etc/zookeeper/conf/zoo.cfg
+
+        server.1=192.168.1.150:2888:3888
+        server.2=192.168.1.151:2888:3888
+        server.3=192.168.1.152:2888:3888
+        
+        # sudo systemctl restart zookeeper
+        # sudo systemctl status zookeeper # Kiểm tra trạng thái zookeeper
+
+
+        # Thực hiện trên server 1
+
+        # Truy cập vào môi trường zookeeper
+        # /usr/share/zookeeper/bin/zkCli.sh -server 192.168.1.150:2181
+
+        # Thêm znode và kiểm tra
+        # create /devopseduvn_series "series storage"
+        # get /devopseduvn_series
+        # create /devopseduvn_series/series_1 "DevOps for Freshers"
+        # create /devopseduvn_series/series_2 "Xây dựng quy trình pipeline DevSecOps thực tế"
+        # create /devopseduvn_series/series_3 "HA tools"
+        # ls /devopseduvn_series
+
+
+        # Thực hiện trên server 2 hoặc server 3
+
+        # Truy cập vào môi trường zookeeper
+        # /usr/share/zookeeper/bin/zkCli.sh -server 192.168.1.150:2181
+
+        # Kiểm tra thành công cài đặt zookeeper cluster
+        # get /devopseduvn_series
+
+
+        # Thực hiện trên cả 3 servers
+        # Cài đặt kafka
+
+        # sudo wget https://dlcdn.apache.org/kafka/4.1.0/kafka_2.13-4.1.0.tgz
+        # tar -xzf kafka_2.13-4.1.0.tgz
+        # sudo mv kafka_2.13-4.1.0 /usr/local/kafka
+        # sudo vi /usr/local/kafka/config/server.properties
+        #### sudo cd /usr/local/kafka && sudo vi config/server.properties
+
+        # Chỉnh sửa ở server 1
+        # broker.id=0
+        # listeners=PLAINTEXT://192.168.1.150:9092 
+        # advertised.listeners=PLAINTEXT://192.168.1.150:9092
+        # log.dirs=/var/lib/kafka-logs
+        # zookeeper.connection.timeout.ms=18000
+        # zookeeper.connect=192.168.1.150:2181,192.168.1.151:2181,192.168.1.152:2181 
+        
+         # Chỉnh sửa ở server 1
+        # broker.id=1
+        # listeners=PLAINTEXT://192.168.1.151:9092 
+        # advertised.listeners=PLAINTEXT://192.168.1.151:9092
+        # log.dirs=/var/lib/kafka-logs
+        # zookeeper.connection.timeout.ms=18000
+        # zookeeper.connect=192.168.1.150:2181,192.168.1.151:2181,192.168.1.152:2181 
+
+        # Chỉnh sửa ở server 1
+        # broker.id=2
+        # listeners=PLAINTEXT://192.168.1.152:9092 
+        # advertised.listeners=PLAINTEXT://192.168.1.152:9092
+        # log.dirs=/var/lib/kafka-logs
+        # zookeeper.connection.timeout.ms=18000
+        # zookeeper.connect=192.168.1.150:2181,192.168.1.151:2181,192.168.1.152:2181 
+
+        # Khởi chạy Kafka
+        # sudo bin/kafka-server-start.sh config/server.properties > logfile.log 2>&1 &
+
+
+        # Thực hiện trên server 1
+        # sudo bin/kafka-topics.sh --create --topic user_activity --bootstrap-server 192.168.1.150:9092 --replication-factor 3 --partitions 6
+
+        # Thực hiện trên server 2 hoặc server 3
+        # Kiểm tra tính HA
+
+        # sudo bin/kafka-topics.sh --list --bootstrap-server 192.168.1.151:9092 # Server 2
+        # sudo bin/kafka-topics.sh --list --bootstrap-server 192.168.1.152:9092 # Server 3
+
+
+        # Thực hiện trên 3 servers
+
+        # [Unit]
+        # Description=Apache Kafka Server
+        # After=zookeeper.service
+
+        # [Service]
+        # Type=simple
+        # ExecStart=/usr/local/kafka/bin/kafka-server-start.sh /usr/local/kafka/config/server.properties > logfile.log 2>&1 &
+        # ExecStop=/usr/local/kafka/bin/kafka-server-stop.sh
+        # Restart=on-failure
+
+        # [Install]
+        # WantedBy=multi-user.target
+        
       SHELL
     end
   end

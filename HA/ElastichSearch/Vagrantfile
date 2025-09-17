@@ -10,7 +10,7 @@ Vagrant.configure("2") do |config|
   # Cấu hình chung cho tất cả máy ảo
   config.vm.boot_timeout = 600  # Tăng timeout lên 10 phút
   config.vm.provider "virtualbox" do |vb|
-    vb.memory = "3104"
+    vb.memory = "2048"
     vb.cpus = 2
     vb.gui = false  # Bật GUI để debug
     # Tối ưu VirtualBox
@@ -20,9 +20,9 @@ Vagrant.configure("2") do |config|
 
   # Định nghĩa 3 máy ảo K8s
   machines = [
-    { name: "elasticsearch-server-1", ip: "192.168.1.120", memory: 2048, cpus: 2, disk: 15 },
-    { name: "elasticsearch-server-2", ip: "192.168.1.121", memory: 2048, cpus: 2, disk: 15 },
-    { name: "elasticsearch-server-3", ip: "192.168.1.122", memory: 2048, cpus: 2, disk: 15 },
+    { name: "elasticsearch-server-1", ip: "192.168.1.120", memory: 2048, cpus: 2, disk: 20 },
+    { name: "elasticsearch-server-2", ip: "192.168.1.121", memory: 2048, cpus: 2, disk: 20 },
+    { name: "elasticsearch-server-3", ip: "192.168.1.122", memory: 2048, cpus: 2, disk: 20 },
   ]
 
   machines.each do |machine|
